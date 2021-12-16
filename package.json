@@ -1,0 +1,33 @@
+{
+  "name": "hyperxnft-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "app": "nodemon app.js",
+    "test": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crypto-wolf-1203/HyperXNFT-backend.git"
+  },
+  "author": "crypto-wolf",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/crypto-wolf-1203/HyperXNFT-backend/issues"
+  },
+  "homepage": "https://github.com/crypto-wolf-1203/HyperXNFT-backend#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.19.1",
+    "config": "^3.3.6",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "mongoose": "^6.1.2",
+    "validation": "0.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
