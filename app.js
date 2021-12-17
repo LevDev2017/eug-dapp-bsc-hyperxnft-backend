@@ -9,6 +9,8 @@ const signin_router = require('./routes/api/signin');
 const signout_router = require('./routes/api/signout');
 const user_router = require('./routes/api/user');
 const comment_router = require('./routes/api/comment');
+const { explorer_nfts } = require('./contracts/nft_list');
+const price_scan = require('./contracts/price_scan');
 
 const app = express();
 
@@ -32,5 +34,8 @@ app.use('/api/user', user_router);
 app.use('/api/comment', comment_router);
 
 const port = process.env.PORT || 8082;
+
+explorer_nfts();
+price_scan();
 
 app.listen(port, () => console.log(`Server running on port ${port}`));

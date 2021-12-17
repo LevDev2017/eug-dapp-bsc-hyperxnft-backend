@@ -11,6 +11,9 @@ db.role = require("./role.model");
 db.mint = require("./mint.model");
 db.login = require("./login.model");
 db.comment = require("./comment.model");
+db.NFT = require("./nft.model");
+db.payment = require("./payment.model");
+db.payment_conversion = require("./payment_conversion.model");
 
 db.ROLES = ["user", "creator", "admin"];
 
