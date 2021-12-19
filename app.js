@@ -9,6 +9,8 @@ const signin_router = require('./routes/api/signin');
 const signout_router = require('./routes/api/signout');
 const user_router = require('./routes/api/user');
 const comment_router = require('./routes/api/comment');
+const nft_router = require('./routes/api/nft');
+const payment_router = require('./routes/api/payment');
 const { explorer_nfts } = require('./contracts/nft_list');
 const price_scan = require('./contracts/price_scan');
 
@@ -32,6 +34,8 @@ app.use('/api/signin', signin_router);
 app.use('/api/signout', signout_router);
 app.use('/api/user', user_router);
 app.use('/api/comment', comment_router);
+app.use('/api/nft', nft_router);
+app.use('/api/payment', payment_router);
 
 const port = process.env.PORT || 8082;
 

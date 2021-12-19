@@ -110,8 +110,6 @@ const explorer_nfts = async () => {
 
         let collections = await contract.methods.getCollectionInfo().call();
 
-        let idStart = 0;
-
         let i;
         for (i = 0; i < collections.length; i++) {
 
