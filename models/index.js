@@ -14,6 +14,9 @@ db.comment = require("./comment.model");
 db.NFT = require("./nft.model");
 db.payment = require("./payment.model");
 db.payment_conversion = require("./payment_conversion.model");
+db.sale = require("./sale.model");
+db.offer = require("./offer.model");
+db.favorite = require("./favorite.model");
 
 db.ROLES = ["user", "creator", "admin"];
 

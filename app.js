@@ -13,6 +13,9 @@ const nft_router = require('./routes/api/nft');
 const payment_router = require('./routes/api/payment');
 const { explorer_nfts } = require('./contracts/nft_list');
 const price_scan = require('./contracts/price_scan');
+const sale_router = require('./routes/api/sale');
+const offer_router = require('./routes/api/offer');
+const favorite_router = require('./routes/api/favorite');
 
 const app = express();
 
@@ -36,6 +39,9 @@ app.use('/api/user', user_router);
 app.use('/api/comment', comment_router);
 app.use('/api/nft', nft_router);
 app.use('/api/payment', payment_router);
+app.use('/api/sale', sale_router);
+app.use('/api/offer', offer_router);
+app.use('/api/favorite', favorite_router);
 
 const port = process.env.PORT || 8082;
 

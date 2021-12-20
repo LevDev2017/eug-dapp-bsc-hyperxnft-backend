@@ -6,6 +6,8 @@ const models = require('../../models');
 
 const NFT = models.NFT;
 
+const { reload_nft } = require('../../contracts/nft_list');
+
 // @route POST api/nft
 // @description nft prodecure from users
 // @access public
@@ -98,6 +100,27 @@ router.get('/:address/:id', async (req, res) => {
             res.json({ msg: 'found', item: items[0] });
         } else {
             res.json({ msg: 'not found' });
+        }
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error: ${err}` });
+    }
+});
+
+router.put('/reload', async (req, res) => {
+    try {
+        const {address: addr, tokenId: tokenId} = req.body;
+        await reload_nft(addr, tokenId);
+
+        const items = await NFT.find({
+            contract: addr,
+            tokenId: tokenId
+        });
+
+        if (items.length > 0) {
+            res.json({msg: 'reloaded', item: items[0]});
+        } else {
+            res.json({msg: 'not reloaded'});
         }
     } catch (err) {
         console.log(err);
