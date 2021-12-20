@@ -79,4 +79,24 @@ router.get('/', async (req, res) => {
     }
 });
 
+
+// @route GET api/favorite/count
+// @description GET favorite count to users
+// @access public
+
+router.get('/count', async (req, res) => {
+    try {
+        const { contract, tokenId } = req.query;
+        var items = await Favorite.find({
+            contract: contract,
+            tokenId: parseInt(tokenId)
+        });
+
+        res.json({ msg: 'favorite count', count: items.length});
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error ${err}` });
+    }
+});
+
 module.exports = router;

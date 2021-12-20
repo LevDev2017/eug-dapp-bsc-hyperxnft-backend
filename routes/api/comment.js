@@ -1,10 +1,12 @@
 // routes/api/comment.js
 
 const express = require('express');
+const { getTimeGap } = require('../../contracts/nft_list');
 const router = express.Router();
 const models = require('../../models');
 
 const Comment = models.comment;
+const Favorite = models.favorite;
 
 // @route POST api/comment
 // @description post comment information request from users
@@ -18,10 +20,24 @@ router.post('/', async (req, res) => {
     // var date = new Date(strNow);
     // console.log("again: ", date.toLocaleString());
 
+    var favCount = await Favorite.find({
+        contract: commentData.contract,
+        tokenId: commentData.tokenId
+    }).countDocuments();
+
+    var items = await Favorite.find({
+        contract: commentData.contract,
+        tokenId: commentData.tokenId
+    });
+
+    var found = items.find(t => t.address.toLowerCase() === commentData.address.toLowerCase());
+
     var newHistory = new Comment({
         contract: commentData.contract,
         tokenId: commentData.tokenId,
         content: commentData.content,
+        favorite: favCount,
+        set: found !== undefined,
         user: commentData.user,
         address: commentData.address,
         role: commentData.role,
@@ -32,5 +48,53 @@ router.post('/', async (req, res) => {
 
     res.json({msg: 'ok'});
 });
+
+// @route GET api/comment
+// @description GET comment information request to users
+// @access public
+
+router.get('/', async (req, res) => {
+    try {
+        const { contract, tokenId } = req.query;
+        var items = await Comment.find({
+            contract: contract,
+            tokenId: parseInt(tokenId)
+        });
+
+        if (items.length === 0) {
+            res.json({ msg: 'no comments' });
+        } else {
+            var tnow = new Date;
+            items.forEach((part, index, arr) => {
+                arr[index]._doc = {...part._doc, timespan: getTimeGap(tnow, part.time)};
+            });
+            res.json({ msg: 'found comments', res: items});
+        }
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error ${err}` });
+    }
+});
+
+
+// @route GET api/comment/count
+// @description GET comment count to users
+// @access public
+
+router.get('/count', async (req, res) => {
+    try {
+        const { contract, tokenId } = req.query;
+        var items = await Comment.find({
+            contract: contract,
+            tokenId: parseInt(tokenId)
+        });
+
+        res.json({ msg: 'comment count', count: items.length});
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error ${err}` });
+    }
+});
+
 
 module.exports = router;
