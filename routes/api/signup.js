@@ -29,16 +29,22 @@ router.post('/', (req, res) => {
             if (item.length == 0) {
                 var found = await Creator.find({
                     email: signupData.email,
-                    name: signupData.name,
-                    password: signupData.password
+                    name: signupData.name
                 });
+
+                if (found !== undefined && found.length > 0) {
+                    if (found[0].password !== signupData.password) {
+                        res.json({ msg: 'password incorrect' });
+                        return;
+                    }
+                }
 
                 var role = userRole[0];
                 if (found !== undefined && found.length > 0) {
                     role = await Role.findById(found[0].roles[0]);
                 }
 
-                var address_found = await Subscriber.find({ address: signupData.address});
+                var address_found = await Subscriber.find({ address: signupData.address });
 
                 if (address_found !== undefined && address_found.length > 0) {
                     await Subscriber.findByIdAndUpdate(address_found[0]._id, {
@@ -48,6 +54,7 @@ router.post('/', (req, res) => {
                         address: signupData.address,
                         roles: [role._id]
                     });
+                    res.json({ msg: `signed up, replaced ${address_found[0].name}`, result: 1, role: role.name });
                 } else {
                     var ret = new Subscriber({
                         name: signupData.name,
@@ -57,8 +64,8 @@ router.post('/', (req, res) => {
                         roles: [role._id]
                     });
                     await ret.save();
+                    res.json({ msg: `signed up, added new`, result: 1, role: role.name });
                 }
-                res.json({ msg: 'signed up', result: 1, role: role.name });
 
                 var strNow = new Date().toLocaleString();
                 // console.log("now: ", strNow);
@@ -76,18 +83,17 @@ router.post('/', (req, res) => {
 
                 await newHistory.save();
             } else {
-                var found = await Creator.find({
-                    email: signupData.email,
-                    name: signupData.name,
-                    password: signupData.password
-                });
-
-                await Subscriber.findByIdAndUpdate(item[0]._id, {
-                    address: signupData.address
-                });
-
                 var role = await Role.findById(item[0].roles[0]);
-                res.json({ msg: 'already signed up', result: 1, role: role.name });
+
+                if (signupData.address === item[0].address) {
+                    res.json({ msg: 'already signed up', result: 1, role: role.name });
+                } else {
+                    await Subscriber.findByIdAndUpdate(item[0]._id, {
+                        address: signupData.address,
+                        roles: [role._id]
+                    });
+                    res.json({ msg: `already signed up, updated wallet address to ${signupData.address}`, result: 1, role: role.name });
+                }
 
                 var strNow = new Date().toLocaleString();
                 // console.log("now: ", strNow);
@@ -105,7 +111,7 @@ router.post('/', (req, res) => {
 
                 await newHistory.save();
             }
-            
+
         })
         .catch(async (err) => {
             console.log('failed to look up subscriber list for signup');
