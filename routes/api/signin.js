@@ -32,9 +32,9 @@ router.post('/', (req, res) => {
 
                     var newHistory = new LogIn({
                         action: "sign-in",
-                        email: signinData.email,
-                        name: signinData.name,
-                        address: signinData.address,
+                        email: item[0].email,
+                        name: item[0].name,
+                        address: item[0].address,
                         role: role.name,
                         time: strNow
                     });
@@ -71,9 +71,9 @@ router.post('/', (req, res) => {
 
                                 var newHistory = new LogIn({
                                     action: "sign-in",
-                                    email: signinData.email,
-                                    name: signinData.name,
-                                    address: signinData.address,
+                                    email: item[0].email,
+                                    name: item[0].name,
+                                    address: item[0].address,
                                     role: role.name,
                                     time: strNow
                                 });
