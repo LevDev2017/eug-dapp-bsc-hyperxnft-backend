@@ -1,79 +1,97 @@
 const Web3 = require('web3')
+const HDWalletProvider = require("truffle-hdwallet-provider");
 const BigNumber = require('bignumber.js')
 const ERC20 = require('./abi/erc20.json')
+const router_v2_abi = require('./abi/routerV2.json')
+const fs = require('fs');
 const chainData = require('./chainData')
-const { HYPERX_CONTRACT, WBNB_CONTRACT, BUSD_CONTRACT, WBNB_BUSD_PAIR_CONTRACT, WBNB_HYPERX_PAIR_CONTRACT } = require('./address')
+const { ROUTER_V2_ADDRESS, HYPERX_CONTRACT, WBNB_CONTRACT, BUSD_CONTRACT } = require('./address')
 
+const pvkey = fs.readFileSync('.secret').toString().trim();
 const models = require('../models');
 const payment = models.payment;
 const payment_conversion = models.payment_conversion;
 
-const web3 = new Web3('https://speedy-nodes-nyc.moralis.io/7784d8edf9ba80a1d01a9c6c/bsc/mainnet');
-// const web3 = new Web3(chainData.rpcUrls[0]);
+const provider = new HDWalletProvider(
+    pvkey,
+    // chainData.rpcUrls[0]
+    // "https://data-seed-prebsc-1-s1.binance.org:8545" // testnet RPC
+    'https://speedy-nodes-nyc.moralis.io/2e9dcc31990acc9b69974c3b/bsc/mainnet' // moralis mainnet RPC
+    // 'https://bsc-dataseed.binance.org/' // mainnet RPC
+);
+const web3 = new Web3(provider);
+
+var errString = '';
 
 const price_scan = async () => {
+    try {
+        let router_v2 = await new web3.eth.Contract(router_v2_abi, ROUTER_V2_ADDRESS);
 
-    let hyperx = await new web3.eth.Contract(ERC20, HYPERX_CONTRACT);
-    let wbnb = await new web3.eth.Contract(ERC20, WBNB_CONTRACT);
-    let busd = await new web3.eth.Contract(ERC20, BUSD_CONTRACT);
+        let hyperx = await new web3.eth.Contract(ERC20, HYPERX_CONTRACT);
+        let wbnb = await new web3.eth.Contract(ERC20, WBNB_CONTRACT);
+        let busd = await new web3.eth.Contract(ERC20, BUSD_CONTRACT);
 
-    let decimal = [
-        {
-            payment: 0,
-            name: "HyperX",
-            decimal: await hyperx.methods.decimals().call()
-        },
-        {
-            payment: 1,
-            name: "BNB",
-            decimal: await wbnb.methods.decimals().call()
-        },
-        {
-            payment: 2,
-            name: "BUSD",
-            decimal: await busd.methods.decimals().call()
-        }
-    ];
+        let decimal = [
+            {
+                payment: 0,
+                name: "HyperX",
+                decimal: await hyperx.methods.decimals().call()
+            },
+            {
+                payment: 1,
+                name: "BNB",
+                decimal: await wbnb.methods.decimals().call()
+            },
+            {
+                payment: 2,
+                name: "BUSD",
+                decimal: await busd.methods.decimals().call()
+            }
+        ];
 
-    let i;
-    for (i = 0; i < decimal.length; i++) {
-        try {
+        let i;
+        for (i = 0; i < decimal.length; i++) {
             var items = await payment.find(decimal[i]);
             if (items.length == 0) {
                 var newDec = new payment(decimal[i]);
                 await newDec.save();
             }
-        } catch (err) {
-            console.log(err);
         }
-    }
 
-    const reload_price = async () => {
-        let bbpair_for_bnb = await wbnb.methods.balanceOf(WBNB_BUSD_PAIR_CONTRACT).call();
-        let bbpair_for_busd = await busd.methods.balanceOf(WBNB_BUSD_PAIR_CONTRACT).call();
+        const reload_price = async () => {
+            let BNB_unit_amount = BigNumber(`1e${decimal[1].decimal}`);
+            let routerPairForBnb = [WBNB_CONTRACT, BUSD_CONTRACT];
 
-        let busd_to_bnb_price = await BigNumber(bbpair_for_busd).times(BigNumber(`1e${decimal[1].decimal}`)).div(BigNumber(bbpair_for_bnb)).div(BigNumber(`1e${decimal[2].decimal}`));
+            let bnb_price = await router_v2.methods.getAmountsOut(BNB_unit_amount, routerPairForBnb).call();
+            let busd_to_bnb_price = BigNumber(bnb_price[1])
+                .times(BigNumber(`1e${decimal[2].decimal}`))
+                .div(BigNumber(bnb_price[0]))
+                .div(BigNumber(`1e${decimal[1].decimal}`));
 
-        let hbpair_for_hyper = await hyperx.methods.balanceOf(WBNB_HYPERX_PAIR_CONTRACT).call();
-        let hbpair_for_bnb = await wbnb.methods.balanceOf(WBNB_HYPERX_PAIR_CONTRACT).call();
+            let HYPER_unit_amount = BigNumber(`1e${decimal[0].decimal}`);
+            let routerPairForHyper = [HYPERX_CONTRACT, BUSD_CONTRACT];
 
-        let hbratio = await BigNumber(hbpair_for_bnb).times(BigNumber(`1e${decimal[0].decimal}`)).div(BigNumber(hbpair_for_hyper)).div(BigNumber(`1e${decimal[1].decimal}`));
-        let busd_to_hyper_price = await hbratio.times(busd_to_bnb_price);
+            let hyper_price = await router_v2.methods.getAmountsOut(HYPER_unit_amount, routerPairForHyper).call();
+            let busd_to_hyper_price = BigNumber(hyper_price[1])
+                .times(BigNumber(`1e${decimal[0].decimal}`))
+                .div(BigNumber(hyper_price[0]))
+                .div(BigNumber(`1e${decimal[1].decimal}`));
 
-        var pc = [
-            {
-                name: "HyperX to BUSD",
-                ratio: busd_to_hyper_price.toString()
-            },
-            {
-                name: "BNB to BUSD",
-                ratio: busd_to_bnb_price.toString()
-            }
-        ];
+            var pc = [
+                {
+                    name: "HyperX/BUSD",
+                    ratio: busd_to_hyper_price.toString()
+                },
+                {
+                    name: "BNB/BUSD",
+                    ratio: busd_to_bnb_price.toString()
+                }
+            ];
 
-        let i;
-        for (i = 0; i < pc.length; i ++) {
-            try {
+            console.log(pc);
+
+            let i;
+            for (i = 0; i < pc.length; i++) {
                 var items = await payment_conversion.find({
                     name: pc[i].name
                 });
@@ -83,25 +101,36 @@ const price_scan = async () => {
                     var newPc = new payment_conversion(pc[i]);
                     await newPc.save();
                 }
-            } catch (err) {
-                console.log(err);
             }
         }
-    }
 
-    const recursive_run = () => {
-        reload_price()
-            .then(() => {
-                setTimeout(recursive_run, 1000);
-            })
-            .catch(err => {
-                console.log("reload_price error: ", err);
-                console.log("reload_price => running again");
-                setTimeout(recursive_run, 1000);
-            })
-    }
+        const recursive_run = () => {
+            reload_price()
+                .then(() => {
+                    errString = '';
+                    setTimeout(recursive_run, 1000);
+                })
+                .catch(err => {
+                    let errText = err.toString();
+                    if (errString != errText) {
+                        console.log("reload_price: ", errText);
+                        errString = errText;
+                    }
+                    setTimeout(recursive_run, 1000);
+                })
+        }
 
-    recursive_run();
+        recursive_run();
+    } catch (err) {
+        let errText = err.toString();
+        if (errString != errText) {
+            console.log(err);
+            errString = errText;
+        }
+
+        price_scan();
+        return;
+    }
 }
 
 module.exports = price_scan
