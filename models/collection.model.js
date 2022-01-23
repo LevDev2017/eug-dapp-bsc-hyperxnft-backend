@@ -10,7 +10,6 @@ const Collection = mongoose.model(
         contractAddress: String,
         user: String,
         walletAddress: String,
-        owner: String,
         timestamp: Date
     })
 );

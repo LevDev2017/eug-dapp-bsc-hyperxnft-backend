@@ -40,9 +40,7 @@ router.post('/new/', (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const { owner, extra } = req.query;
-
-        console.log('------------', req.query);
+        const { owner, extra, address } = req.query;
 
         if (owner == undefined) {
             res.json({ msg: 'undefined owner for collection query', result: 0 });
@@ -53,6 +51,11 @@ router.get('/', async (req, res) => {
         } else if (extra === 'onlyOwner') {
             var items = await Collection.find({
                 walletAddress: owner
+            });
+            res.json({ msg: 'ok', result: 1, collections: items });
+        } else if (extra === 'one') {
+            var items = await Collection.find({
+                contractAddress: address,
             });
             res.json({ msg: 'ok', result: 1, collections: items });
         } else {
