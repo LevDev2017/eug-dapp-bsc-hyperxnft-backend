@@ -1,26 +1,50 @@
 // nft_list.js
-
 const Web3 = require('web3')
+const HDWalletProvider = require("truffle-hdwallet-provider");
+const fs = require('fs');
 const chainData = require('./chainData')
-const HyperXNFTManage = require('./abi/HyperXNFTManage.json')
-const manager_contract = HyperXNFTManage.abi
-const HyperXNFTCollection = require('./abi/HyperXNFTCollection.json')
-const collection_contract = HyperXNFTCollection.abi
-const { NFT_COLLECTION_MANAGER_CONTRACT } = require('./address')
+const HyperXNFTFactory = require('./abi/HyperXNFTFactory.json')
+const factoryContract = HyperXNFTFactory.abi
+const ERC721Tradable = require('./abi/ERC721Tradable.json')
+const singleCollectionContract = ERC721Tradable.abi;
+const ERC1155Tradable = require('./abi/ERC1155Tradable.json')
+const multipleCollectionContract = ERC1155Tradable.abi;
+
+const { addRawCollection } = require('../routes/api/collection');
+
+const { NFT_FACTORY_CONTRACT_ADDRESS } = require('./address')
 
 const models = require('../models');
 const NFT = models.NFT;
 
-const web3 = new Web3(chainData.rpcUrls[0]);
+const pvkey = fs.readFileSync('.secret').toString().trim();
+
+const provider = new HDWalletProvider(
+    pvkey,
+    chainData.rpcUrls[0]
+    // https://speedy-nodes-nyc.moralis.io/bfaf7a5a5cd9975318f411e4/bsc/testnet
+    // "https://data-seed-prebsc-1-s1.binance.org:8545" // testnet RPC
+    // 'https://speedy-nodes-nyc.moralis.io/2e9dcc31990acc9b69974c3b/bsc/mainnet' // moralis mainnet RPC
+    // 'https://bsc-dataseed.binance.org/' // mainnet RPC
+);
+const web3 = new Web3(provider);
+let accountAddress = '';
+
+web3.eth.getAccounts()
+    .then(accounts => {accountAddress = accounts[0]})
+    .catch(err => {
+        console.log(err.toString());
+    })
+
 
 const reload_nft = async (collectionAddress, tokenId) => {
-    let nftcollection = await new web3.eth.Contract(collection_contract, collectionAddress);
+    let nftcollection = await new web3.eth.Contract(multipleCollectionContract, collectionAddress);
 
     let name = await nftcollection.methods.name().call();
     let symbol = await nftcollection.methods.symbol().call();
 
-    let tokenURI = await nftcollection.methods.tokenURI(tokenId).call();
-    let owner = await nftcollection.methods.ownerOf(tokenId).call();
+    let tokenURI = await nftcollection.methods.uri(tokenId).call();
+    let creator = await nftcollection.methods.getCreator(tokenId).call();
     let tokenName = await nftcollection.methods.tokenName(tokenId).call();
     let tokenPrice = await nftcollection.methods.tokenPrice(tokenId).call();
     let tokenPaymentType = await nftcollection.methods.tokenPaymentType(tokenId).call();
@@ -105,25 +129,41 @@ const reload_nft = async (collectionAddress, tokenId) => {
 
 const explorer_nfts = async () => {
 
+    let errString = '';
+
     const list_nft = async () => {
-        let contract = await new web3.eth.Contract(manager_contract, NFT_COLLECTION_MANAGER_CONTRACT);
+        try {
+            let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
 
-        let collections = await contract.methods.getCollectionInfo().call();
+            let collections = await contract.methods.getCollections().call({from: accountAddress});
+            // console.log(collections);
 
-        let i;
-        for (i = 0; i < collections.length; i++) {
+            let i;
 
-            // await console.log("nfts: ", nfts);
+            for (i = 0; i < collections.length; i++) {
+                let nftcollection = await new web3.eth.Contract(multipleCollectionContract, collections[i]);
+                let owner = await nftcollection.methods.owner().call();
 
-            let nftcollection = await new web3.eth.Contract(collection_contract, collections[i]);
-            let totalSupply = await nftcollection.methods.getNumberOfTokensMinted().call();
+                // add this collectiona address if it does not exist in db.
+                await addRawCollection(collections[i], owner);
+            }
 
-            let totalCount = await parseInt(totalSupply);
+            for (i = 0; i < collections.length; i++) {
+                let nftcollection = await new web3.eth.Contract(multipleCollectionContract, collections[i]);
+                let reservedTokenId = parseInt(await nftcollection.methods.getReservedTokenId().call());
 
-            let j;
+                let j;
 
-            for (j = 0; j < totalCount; j++) {
-                await reload_nft(collections[i], j);
+                for (j = 1; j < reservedTokenId; j ++) {
+                    await reload_nft(collections[i], j);
+                }
+            }
+            errString = '';
+        } catch (err) {
+            let errText = err.toString();
+            if (errString != errText) {
+                errString = errText;
+                console.log("list nft: ", errText);
             }
         }
     }
@@ -134,10 +174,8 @@ const explorer_nfts = async () => {
                 setTimeout(recursive_run, 1000);
             })
             .catch(err => {
-                console.log("list_nft error: ", err);
-                console.log("list_nft => running again");
                 setTimeout(recursive_run, 1000);
-            })
+            });
     }
 
     recursive_run();
@@ -170,7 +208,7 @@ const getTimeGap = (now, past) => {
     if (span < 12) {
         return `${Math.floor(span)} months ago`;
     }
-    
+
     span /= 12;
 
     return `${Math.floor(span)} years ago`;

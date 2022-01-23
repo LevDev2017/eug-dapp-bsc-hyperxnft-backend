@@ -88,7 +88,7 @@ const price_scan = async () => {
                 }
             ];
 
-            console.log(pc);
+            // console.log(pc);
 
             let i;
             for (i = 0; i < pc.length; i++) {
@@ -124,11 +124,11 @@ const price_scan = async () => {
     } catch (err) {
         let errText = err.toString();
         if (errString != errText) {
-            console.log(err);
+            console.log("price_scan: ", err);
             errString = errText;
         }
 
-        price_scan();
+        setTimeout(price_scan, 1000);
         return;
     }
 }

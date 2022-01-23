@@ -16,6 +16,7 @@ const price_scan = require('./contracts/price_scan');
 const sale_router = require('./routes/api/sale');
 const offer_router = require('./routes/api/offer');
 const favorite_router = require('./routes/api/favorite');
+const { collection_router } = require('./routes/api/collection');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/payment', payment_router);
 app.use('/api/sale', sale_router);
 app.use('/api/offer', offer_router);
 app.use('/api/favorite', favorite_router);
+app.use('/api/collection', collection_router);
 
 const port = process.env.PORT || 8082;
 

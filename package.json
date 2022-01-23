@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/crypto-wolf-1203/HyperXNFT-backend#readme",
   "dependencies": {
+    "axios": "^0.25.0",
     "bcryptjs": "^2.4.3",
     "bignumber": "^1.1.0",
     "body-parser": "^1.19.1",

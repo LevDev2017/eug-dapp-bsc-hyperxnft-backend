@@ -17,6 +17,7 @@ db.payment_conversion = require("./payment_conversion.model");
 db.sale = require("./sale.model");
 db.offer = require("./offer.model");
 db.favorite = require("./favorite.model");
+db.collection = require("./collection.model");
 
 db.ROLES = ["user", "creator", "admin"];
 
