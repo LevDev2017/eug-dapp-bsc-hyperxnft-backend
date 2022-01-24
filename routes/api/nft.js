@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
     try {
         if (JSON.stringify(req.query) === '{}') {
             var items = await NFT.find();
-            if (items !== undefined && items.length > 0) {
+            if (items !== undefined) {
                 res.json({ msg: 'found', result: items.length, nft: items });
             } else {
                 res.json({ msg: 'not found', result: 0});

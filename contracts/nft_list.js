@@ -39,7 +39,6 @@ web3.eth.getAccounts()
 const reload_nft = async (collectionAddress, tokenId) => {
     let nftcollection = await new web3.eth.Contract(multipleCollectionContract, collectionAddress);
 
-    console.log('-----', collectionAddress, tokenId);
     let tokenURI = await nftcollection.methods.uri(tokenId).call();
     let totalSupply = await nftcollection.methods.totalSupply(tokenId).call();
     let creator = await nftcollection.methods.getCreator(tokenId).call();
@@ -143,8 +142,6 @@ const explorer_nfts = async () => {
                 let reservedTokenId = parseInt(await nftcollection.methods.getReservedTokenId().call());
 
                 let j;
-
-                console.log('reserved token id:', reservedTokenId);
 
                 for (j = 1; j < reservedTokenId; j++) {
                     await reload_nft(collections[i], j);
