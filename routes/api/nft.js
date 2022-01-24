@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
             if (items !== undefined) {
                 res.json({ msg: 'found', result: items.length, nft: items });
             } else {
-                res.json({ msg: 'not found', result: 0});
+                res.json({ msg: 'not found', result: 0, nft: []});
             }
         } else {
             var filter_text = "";
