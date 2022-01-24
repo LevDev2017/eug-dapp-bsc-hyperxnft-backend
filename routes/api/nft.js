@@ -116,6 +116,7 @@ router.put('/new', async (req, res) => {
             totalSupply: req.body.totalSupply,
             creator: req.body.creator,
             holderCount: req.body.holderCount,
+            image: req.body.image,
             title: req.body.title,
             category: req.body.category,
             description: req.body.description,
