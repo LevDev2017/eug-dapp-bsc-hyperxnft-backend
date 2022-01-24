@@ -107,24 +107,29 @@ router.get('/:address/:id', async (req, res) => {
     }
 });
 
-router.put('/reload', async (req, res) => {
+router.put('/new', async (req, res) => {
     try {
-        const {address: addr, tokenId: tokenId} = req.body;
-        await reload_nft(addr, tokenId);
-
-        const items = await NFT.find({
-            contract: addr,
-            tokenId: tokenId
+        var ret = await new NFT({
+            collectionAddress: req.body.collectionAddress,
+            tokenId: req.body.tokenId,
+            URI: req.body.URI,
+            totalSupply: req.body.totalSupply,
+            creator: req.body.creator,
+            holderCount: req.body.holderCount,
+            title: req.body.title,
+            category: req.body.category,
+            description: req.body.description,
+            attributes: req.body.attributes,
+            tags: req.body.tags,
+            timestamp: new Date()
         });
 
-        if (items.length > 0) {
-            res.json({msg: 'reloaded', item: items[0]});
-        } else {
-            res.json({msg: 'not reloaded'});
-        }
+        await ret.save();
+
+        res.json({msg: 'added a new NFT', result: 1});
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}` });
+        res.json({ msg: `error: ${err}`, result: 0 });
     }
 });
 

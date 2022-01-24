@@ -1,5 +1,6 @@
 // nft_list.js
 const Web3 = require('web3')
+const axios = require('axios')
 const HDWalletProvider = require("truffle-hdwallet-provider");
 const fs = require('fs');
 const chainData = require('./chainData')
@@ -9,9 +10,7 @@ const ERC721Tradable = require('./abi/ERC721Tradable.json')
 const singleCollectionContract = ERC721Tradable.abi;
 const ERC1155Tradable = require('./abi/ERC1155Tradable.json')
 const multipleCollectionContract = ERC1155Tradable.abi;
-
 const { addRawCollection } = require('../routes/api/collection');
-
 const { NFT_FACTORY_CONTRACT_ADDRESS } = require('./address')
 
 const models = require('../models');
@@ -40,71 +39,55 @@ web3.eth.getAccounts()
 const reload_nft = async (collectionAddress, tokenId) => {
     let nftcollection = await new web3.eth.Contract(multipleCollectionContract, collectionAddress);
 
-    let name = await nftcollection.methods.name().call();
-    let symbol = await nftcollection.methods.symbol().call();
-
     let tokenURI = await nftcollection.methods.uri(tokenId).call();
+    let totalSupply = await nftcollection.methods.totalSupply(tokenId).call();
     let creator = await nftcollection.methods.getCreator(tokenId).call();
-    let tokenName = await nftcollection.methods.tokenName(tokenId).call();
-    let tokenPrice = await nftcollection.methods.tokenPrice(tokenId).call();
-    let tokenPaymentType = await nftcollection.methods.tokenPaymentType(tokenId).call();
-    let tokenTransferCount = await nftcollection.methods.tokenTransferCount(tokenId).call();
-    let tokenOnSale = await nftcollection.methods.tokenOnSale(tokenId).call();
-    let tokenTitle = await nftcollection.methods.tokenTitle(tokenId).call();
-    let tokenCategory = await nftcollection.methods.tokenCategory(tokenId).call();
-    let tokenDescription = await nftcollection.methods.tokenDescription(tokenId).call();
-    let tokenHashTags = await nftcollection.methods.tokenHashTags(tokenId).call();
+    let holderCount = await nftcollection.methods.holders(tokenId).call();
 
-    // console.log("");
-    // console.log("name: ", name);
-    // console.log("symbol: ", symbol);
-    // console.log("tokenURI: ", tokenURI);
-    // console.log("tokenName: ", tokenName);
-    // console.log("tokenPrice: ", tokenPrice);
-    // console.log("tokenPaymentType: ", tokenPaymentType);
-    // console.log("tokenTransferCount: ", tokenTransferCount);
-    // console.log("tokenOnSale: ", tokenOnSale);
+    let tokenInfo;
+    try {
+        let tx = await axios.get(tokenURI);
+        tokenInfo = tx.data;
+    } catch (err) {
+        // console.log('reload_nft error: ', err.message);
+        return;
+    }
 
     const newItem = {
-        collectionName: name,
-        symbol: symbol,
-        contract: collectionAddress,
+        collectionAddress: collectionAddress,
         tokenId: tokenId,
         URI: tokenURI,
-        owner: owner,
-        name: tokenName,
-        price: tokenPrice,
-        payment: parseInt(tokenPaymentType),
-        transferCount: parseInt(tokenTransferCount),
-        onSale: tokenOnSale,
-        title: tokenTitle,
-        category: tokenCategory,
-        description: tokenDescription,
-        hashtags: tokenHashTags
+        totalSupply: totalSupply,
+        creator: creator,
+        holderCount: holderCount,
+        image: tokenInfo.image,
+        title: tokenInfo.name,
+        category: tokenInfo.category,
+        description: tokenInfo.description,
+        attributes: JSON.stringify(tokenInfo.attributes),
+        tags: JSON.stringify(tokenInfo.tags),
+        timestamp: new Date()
     };
 
     try {
         const items = await NFT.find({
-            contract: collectionAddress,
+            collectionAddress: collectionAddress,
             tokenId: tokenId
         });
 
         if (items.length > 0) { // if found an existing items
-            if (items[0].collectionName != newItem.collectionName ||
-                items[0].symbol != newItem.symbol ||
-                items[0].contract != newItem.contract ||
-                items[0].tokenId != newItem.tokenId ||
-                items[0].URI != newItem.URI ||
-                items[0].owner != newItem.owner ||
-                items[0].name != newItem.name ||
-                items[0].price != newItem.price ||
-                items[0].payment != newItem.payment ||
-                items[0].transferCount != newItem.transferCount ||
-                items[0].onSale != newItem.onSale ||
-                items[0].title != newItem.title ||
-                items[0].category != newItem.category ||
-                items[0].description != newItem.description ||
-                items[0].hashtags != newItem.hashtags) { // update nft items
+            if (items[0].collectionAddress !== newItem.collectionAddress ||
+                items[0].tokenId !== newItem.tokenId ||
+                items[0].URI !== newItem.URI ||
+                items[0].totalSupply !== newItem.totalSupply ||
+                items[0].creator !== newItem.creator ||
+                items[0].holderCount !== newItem.holderCount ||
+                items[0].image !== newItem.image ||
+                items[0].title !== newItem.title ||
+                items[0].category !== newItem.category ||
+                items[0].description !== newItem.description ||
+                items[0].attributes !== newItem.attributes ||
+                items[0].tags !== newItem.tags) { // update nft items
                 await NFT.findByIdAndUpdate(
                     items[0]._id,
                     newItem,
@@ -112,15 +95,17 @@ const reload_nft = async (collectionAddress, tokenId) => {
                         returnDocument: 'after'
                     }
                 )
-                // console.log("updated items: ", newItem.contract, newItem.tokenId);
-            } else {
-                // console.log("no changes made: ", newItem.contract, newItem.tokenId);
+                // console.log("updated items: ", newItem);
+            }
+            let i;
+            for (i = 1; i < items.length; i ++) {
+                await NFT.findByIdAndRemove(items[i]._id)
             }
         } else {
             var newNFTDocument = new NFT(newItem);
             await newNFTDocument.save();
 
-            // console.log("added: ", newItem.contract, newItem.tokenId);
+            // console.log("added: ", newItem);
         }
     } catch (err) {
         console.log(err);

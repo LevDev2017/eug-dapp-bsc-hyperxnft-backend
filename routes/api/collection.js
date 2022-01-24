@@ -78,7 +78,7 @@ const addRawCollection = async (addr, owner) => {
     });
 
     if (items.length == 0) {
-        var ret = new Collection({
+        var ret = await new Collection({
             name: '',
             description: '',
             bannerURI: '',
@@ -88,7 +88,7 @@ const addRawCollection = async (addr, owner) => {
             walletAddress: owner.toLowerCase(),
             timestamp: new Date()
         });
-        ret.save();
+        await ret.save();
 
         console.log(`raw collection ${addr} added`);
     }

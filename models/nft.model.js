@@ -3,21 +3,19 @@ const mongoose = require("mongoose");
 const NFT = mongoose.model(
     "NFT",
     new mongoose.Schema({
-        collectionName: String,
-        symbol: String,
-        contract: String,
+        collectionAddress: String,
         tokenId: Number,
         URI: String,
-        owner: String,
-        name: String,
-        price: String,
-        payment: Number,
-        transferCount: Number,
-        onSale: Boolean,
+        totalSupply: Number,
+        creator: String,
+        holderCount: Number,
+        image: String,
         title: String,
         category: String,
         description: String,
-        hashtags: String
+        attributes: String,
+        tags: String,
+        timestamp: Date
     })
 );
 
