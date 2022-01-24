@@ -144,6 +144,8 @@ const explorer_nfts = async () => {
 
                 let j;
 
+                console.log('reserved token id:', reservedTokenId);
+
                 for (j = 1; j < reservedTokenId; j++) {
                     await reload_nft(collections[i], j);
                 }
