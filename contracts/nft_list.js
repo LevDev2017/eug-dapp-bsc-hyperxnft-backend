@@ -30,7 +30,7 @@ const web3 = new Web3(provider);
 let accountAddress = '';
 
 web3.eth.getAccounts()
-    .then(accounts => {accountAddress = accounts[0]})
+    .then(accounts => { accountAddress = accounts[0] })
     .catch(err => {
         console.log(err.toString());
     })
@@ -61,6 +61,7 @@ const reload_nft = async (collectionAddress, tokenId) => {
         creator: creator,
         holderCount: holderCount,
         image: tokenInfo.image,
+        video: false,
         title: tokenInfo.name,
         category: tokenInfo.category,
         description: tokenInfo.description,
@@ -88,6 +89,9 @@ const reload_nft = async (collectionAddress, tokenId) => {
                 items[0].description !== newItem.description ||
                 items[0].attributes !== newItem.attributes ||
                 items[0].tags !== newItem.tags) { // update nft items
+                if (items[0].video !== undefined) {
+                    newItem.video = items[0].video;
+                }
                 await NFT.findByIdAndUpdate(
                     items[0]._id,
                     newItem,
@@ -98,7 +102,7 @@ const reload_nft = async (collectionAddress, tokenId) => {
                 // console.log("updated items: ", newItem);
             }
             let i;
-            for (i = 1; i < items.length; i ++) {
+            for (i = 1; i < items.length; i++) {
                 await NFT.findByIdAndRemove(items[i]._id)
             }
         } else {
@@ -120,7 +124,7 @@ const explorer_nfts = async () => {
         try {
             let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
 
-            let collections = await contract.methods.getCollections().call({from: accountAddress});
+            let collections = await contract.methods.getCollections().call({ from: accountAddress });
             // console.log(collections);
 
             let i;
@@ -139,7 +143,7 @@ const explorer_nfts = async () => {
 
                 let j;
 
-                for (j = 1; j < reservedTokenId; j ++) {
+                for (j = 1; j < reservedTokenId; j++) {
                     await reload_nft(collections[i], j);
                 }
             }

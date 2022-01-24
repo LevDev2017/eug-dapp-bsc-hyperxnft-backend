@@ -10,6 +10,7 @@ const NFT = mongoose.model(
         creator: String,
         holderCount: Number,
         image: String,
+        video: Boolean,
         title: String,
         category: String,
         description: String,
