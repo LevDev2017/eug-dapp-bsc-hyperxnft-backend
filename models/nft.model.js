@@ -16,6 +16,8 @@ const NFT = mongoose.model(
         description: String,
         attributes: String,
         tags: String,
+        favoriteCount: Number,
+        commentCount: Number,
         timestamp: Date
     })
 );

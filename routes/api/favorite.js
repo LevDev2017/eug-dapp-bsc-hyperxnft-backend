@@ -21,7 +21,7 @@ router.put('/', async (req, res) => {
         } = req.body;
 
         let items = await Favorite.find({
-            contract: contract,
+            collectionAddress: contract,
             tokenId: tokenId,
             name: name,
             address: address
@@ -37,7 +37,7 @@ router.put('/', async (req, res) => {
 
         if (update === true) {
             let newItem = new Favorite({
-                contract: contract,
+                collectionAddress: contract,
                 tokenId: tokenId,
                 name: name,
                 address: address,
@@ -61,9 +61,9 @@ router.put('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const { contract, tokenId, account } = req.query;
+        const { collectionAddress, tokenId, account } = req.query;
         var items = await Favorite.find({
-            contract: contract,
+            collectionAddress: collectionAddress,
             tokenId: parseInt(tokenId)
         });
 
@@ -88,7 +88,7 @@ router.get('/count', async (req, res) => {
     try {
         const { contract, tokenId } = req.query;
         var items = await Favorite.find({
-            contract: contract,
+            collectionAddress: contract,
             tokenId: parseInt(tokenId)
         });
 

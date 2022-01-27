@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const Comment = mongoose.model(
     "Comment",
     new mongoose.Schema({
-        contract: String,
+        collectionAddress: String,
         tokenId: String,
         content: String,
         favorite: Number,

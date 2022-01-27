@@ -15,6 +15,8 @@ const { NFT_FACTORY_CONTRACT_ADDRESS } = require('./address')
 
 const models = require('../models');
 const NFT = models.NFT;
+const Favorite = models.favorite;
+const Comment = models.comment;
 
 const pvkey = fs.readFileSync('.secret').toString().trim();
 
@@ -28,6 +30,10 @@ const provider = new HDWalletProvider(
 );
 const web3 = new Web3(provider);
 let accountAddress = '';
+
+const axiosInst = axios.create();
+axiosInst.defaults.timeout = 5000;
+
 
 web3.eth.getAccounts()
     .then(accounts => { accountAddress = accounts[0] })
@@ -46,12 +52,24 @@ const reload_nft = async (collectionAddress, tokenId) => {
 
     let tokenInfo;
     try {
-        let tx = await axios.get(tokenURI);
+        let tx = await axiosInst.get(tokenURI);
         tokenInfo = tx.data;
     } catch (err) {
-        // console.log('reload_nft error: ', err.message);
+        console.log('reload_nft error: ', err.message);
         return;
     }
+
+    let favoriteCount = await Favorite.find({
+        collectionAddress: collectionAddress,
+        tokenId: tokenId
+    }).countDocuments();
+
+    var commentCount = await Comment.find({
+        collectionAddress: collectionAddress,
+        tokenId: parseInt(tokenId)
+    }).countDocuments();
+
+    console.log(favoriteCount, commentCount);
 
     const newItem = {
         collectionAddress: collectionAddress,
@@ -67,6 +85,8 @@ const reload_nft = async (collectionAddress, tokenId) => {
         description: tokenInfo.description,
         attributes: JSON.stringify(tokenInfo.attributes),
         tags: JSON.stringify(tokenInfo.tags),
+        favoriteCount: favoriteCount,
+        commentCount: commentCount,
         timestamp: new Date()
     };
 
@@ -125,7 +145,7 @@ const explorer_nfts = async () => {
             let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
 
             let collections = await contract.methods.getCollections().call({ from: accountAddress });
-            // console.log(collections);
+            console.log(collections);
 
             let i;
 
@@ -170,37 +190,4 @@ const explorer_nfts = async () => {
     recursive_run();
 }
 
-const getTimeGap = (now, past) => {
-    var span = now.getTime() - past.getTime();
-    if (span < 0) {
-        return "Time Error";
-    }
-    span /= 1000;
-    if (span < 60) {
-        return `${Math.floor(span)} seconds ago`;
-    }
-    span /= 60;
-    if (span < 60) {
-        return `${Math.floor(span)} minutes ago`;
-    }
-    span /= 60;
-    if (span < 24) {
-        return `${Math.floor(span)} hours ago`;
-    }
-
-    span /= 24;
-    if (span < 30) {
-        return `${Math.floor(span)} days ago`;
-    }
-
-    span /= 30;
-    if (span < 12) {
-        return `${Math.floor(span)} months ago`;
-    }
-
-    span /= 12;
-
-    return `${Math.floor(span)} years ago`;
-}
-
-module.exports = { explorer_nfts, reload_nft, getTimeGap };
+module.exports = { explorer_nfts, reload_nft };

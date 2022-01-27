@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const Favorite = mongoose.model(
     "Favorite",
     new mongoose.Schema({
-        contract: String,
+        collectionAddress: String,
         tokenId: Number,
         name: String,
         address: String,

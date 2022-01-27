@@ -85,8 +85,8 @@ router.post('/', (req, res) => {
                                 res.json({ msg: `failed to sign in, ${item[0].name} has already signed up with ${item[0].address}` });
                             }
                         } else {
-                            console.log('not signed up');
-                            res.json({ msg: 'not signed up', result: 0 });
+                            console.log('not signed up or incorrect password');
+                            res.json({ msg: 'not signed up or incorrect password', result: 0 });
                         }
                     })
                     .catch(async (err) => {
@@ -100,5 +100,27 @@ router.post('/', (req, res) => {
             res.json({ msg: 'failed to sign in', result: 0 });
         })
 });
+
+router.get('/', async (req, res) => {
+    try {
+        const { address } = req.query;
+
+        let users = await Subscriber.find({
+            address: address.toLowerCase()
+        })
+
+        if (users.length > 0) {
+            res.json({ user: users[0].name, result: 1 });
+            return;
+        } else {
+            res.json({ user: '', result: 0 });
+            return;
+        }
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error ${err}`, result: 0 });
+    }
+});
+
 
 module.exports = router;

@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const models = require('../../models');
+const {delay} = require('../../platform/wait');
 
 const NFT = models.NFT;
 
@@ -42,7 +43,7 @@ router.get('/', async (req, res) => {
                                 $or: [
                                     { collectionName: { $regex: filter_text, $options: "i" } },
                                     { symbol: { $regex: filter_text, $options: "i" } },
-                                    { contract: filter_text },
+                                    { collectionAddress: filter_text },
                                     { URI: filter_text },
                                     { name: { $regex: filter_text, $options: "i" } },
                                     { title: { $regex: filter_text, $options: "i" } },
@@ -67,7 +68,7 @@ router.get('/', async (req, res) => {
                                 $or: [
                                     { collectionName: { $regex: filter_text, $options: "i" } },
                                     { symbol: { $regex: filter_text, $options: "i" } },
-                                    { contract: filter_text },
+                                    { collectionAddress: filter_text },
                                     { URI: filter_text },
                                     { owner: filter_text },
                                     { name: { $regex: filter_text, $options: "i" } },
@@ -93,7 +94,7 @@ router.get('/', async (req, res) => {
 router.get('/:address/:id', async (req, res) => {
     try {
         var items = await NFT.find({
-            contract: req.params.address,
+            collectionAddress: req.params.address,
             tokenId: parseInt(req.params.id)
         });
         if (items.length > 0) {
@@ -105,6 +106,12 @@ router.get('/:address/:id', async (req, res) => {
         console.log(err);
         res.json({ msg: `error: ${err}` });
     }
+});
+
+router.put('/reload', async (req, res) => {
+    const {collectionAddress, tokenId} = req.body;
+    await reload_nft(collectionAddress, tokenId);
+    res.json({ result: 1});
 });
 
 router.put('/new', async (req, res) => {
@@ -123,6 +130,8 @@ router.put('/new', async (req, res) => {
             description: req.body.description,
             attributes: req.body.attributes,
             tags: req.body.tags,
+            favoriteCount: 0,
+            commentCount: 0,
             timestamp: new Date()
         });
 

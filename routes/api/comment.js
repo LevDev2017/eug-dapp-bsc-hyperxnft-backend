@@ -1,7 +1,7 @@
 // routes/api/comment.js
 
 const express = require('express');
-const { getTimeGap } = require('../../contracts/nft_list');
+const { getTimeGap } = require('../../platform/time');
 const router = express.Router();
 const models = require('../../models');
 
@@ -21,19 +21,19 @@ router.post('/', async (req, res) => {
     // console.log("again: ", date.toLocaleString());
 
     var favCount = await Favorite.find({
-        contract: commentData.contract,
+        collectionAddress: commentData.collectionAddress,
         tokenId: commentData.tokenId
     }).countDocuments();
 
     var items = await Favorite.find({
-        contract: commentData.contract,
+        collectionAddress: commentData.collectionAddress,
         tokenId: commentData.tokenId
     });
 
     var found = items.find(t => t.address.toLowerCase() === commentData.address.toLowerCase());
 
     var newHistory = new Comment({
-        contract: commentData.contract,
+        collectionAddress: commentData.collectionAddress,
         tokenId: commentData.tokenId,
         content: commentData.content,
         favorite: favCount,
@@ -55,9 +55,9 @@ router.post('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const { contract, tokenId } = req.query;
+        const { collectionAddress, tokenId } = req.query;
         var items = await Comment.find({
-            contract: contract,
+            collectionAddress: collectionAddress,
             tokenId: parseInt(tokenId)
         });
 
@@ -83,9 +83,9 @@ router.get('/', async (req, res) => {
 
 router.get('/count', async (req, res) => {
     try {
-        const { contract, tokenId } = req.query;
+        const { collectionAddress, tokenId } = req.query;
         var items = await Comment.find({
-            contract: contract,
+            collectionAddress: collectionAddress,
             tokenId: parseInt(tokenId)
         });
 
