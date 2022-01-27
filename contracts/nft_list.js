@@ -55,7 +55,7 @@ const reload_nft = async (collectionAddress, tokenId) => {
         let tx = await axiosInst.get(tokenURI);
         tokenInfo = tx.data;
     } catch (err) {
-        console.log('reload_nft error: ', err.message);
+        console.log('reload_nft error: ', err.message, collectionAddress, tokenId);
         return;
     }
 
@@ -68,8 +68,6 @@ const reload_nft = async (collectionAddress, tokenId) => {
         collectionAddress: collectionAddress,
         tokenId: parseInt(tokenId)
     }).countDocuments();
-
-    console.log(favoriteCount, commentCount);
 
     const newItem = {
         collectionAddress: collectionAddress,
@@ -145,7 +143,7 @@ const explorer_nfts = async () => {
             let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
 
             let collections = await contract.methods.getCollections().call({ from: accountAddress });
-            console.log(collections);
+            // console.log(collections);
 
             let i;
 

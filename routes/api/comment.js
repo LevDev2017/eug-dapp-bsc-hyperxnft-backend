@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
 
     await newHistory.save();
 
-    res.json({msg: 'ok'});
+    res.json({msg: 'ok', result: 1});
 });
 
 // @route GET api/comment

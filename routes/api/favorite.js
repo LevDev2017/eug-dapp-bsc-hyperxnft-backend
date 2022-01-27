@@ -45,13 +45,13 @@ router.put('/', async (req, res) => {
             });
 
             await newItem.save();
-            res.json({msg: 'added favorite'});
+            res.json({msg: 'added favorite', result: 1});
         } else {
-            res.json({msg: 'removed favorite'});
+            res.json({msg: 'removed favorite', result: 1});
         }
     } catch (err) {
         console.log(err);
-        res.json({msg: 'fail'});
+        res.json({msg: 'fail', result: 0});
     }
 });
 

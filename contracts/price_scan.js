@@ -88,7 +88,7 @@ const price_scan = async () => {
                 }
             ];
 
-            console.log(pc);
+            // console.log(pc);
 
             let i;
             for (i = 0; i < pc.length; i++) {
