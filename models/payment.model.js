@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const Payment = mongoose.model(
     "Payment",
     new mongoose.Schema({
-        payment: Number,
+        id: Number,
         name: String,
         decimal: Number
     })

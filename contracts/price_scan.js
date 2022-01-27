@@ -33,19 +33,19 @@ const price_scan = async () => {
 
         let decimal = [
             {
-                payment: 0,
-                name: "HyperX",
-                decimal: await hyperx.methods.decimals().call()
-            },
-            {
-                payment: 1,
+                id: 0,
                 name: "BNB",
                 decimal: await wbnb.methods.decimals().call()
             },
             {
-                payment: 2,
+                id: 1,
                 name: "BUSD",
                 decimal: await busd.methods.decimals().call()
+            },
+            {
+                id: 2,
+                name: "HyperX",
+                decimal: await hyperx.methods.decimals().call()
             }
         ];
 
@@ -59,32 +59,39 @@ const price_scan = async () => {
         }
 
         const reload_price = async () => {
-            let BNB_unit_amount = BigNumber(`1e${decimal[1].decimal}`);
+            let BNB_unit_amount = BigNumber(`1e${decimal[0].decimal}`);
             let routerPairForBnb = [WBNB_CONTRACT, BUSD_CONTRACT];
 
             let bnb_price = await router_v2.methods.getAmountsOut(BNB_unit_amount, routerPairForBnb).call();
             let busd_to_bnb_price = BigNumber(bnb_price[1])
-                .times(BigNumber(`1e${decimal[2].decimal}`))
+                .times(BigNumber(`1e${decimal[0].decimal}`))
                 .div(BigNumber(bnb_price[0]))
                 .div(BigNumber(`1e${decimal[1].decimal}`));
 
-            let HYPER_unit_amount = BigNumber(`1e${decimal[0].decimal}`);
+            let HYPER_unit_amount = BigNumber(`1e${decimal[2].decimal}`);
             let routerPairForHyper = [HYPERX_CONTRACT, BUSD_CONTRACT];
 
             let hyper_price = await router_v2.methods.getAmountsOut(HYPER_unit_amount, routerPairForHyper).call();
             let busd_to_hyper_price = BigNumber(hyper_price[1])
-                .times(BigNumber(`1e${decimal[0].decimal}`))
+                .times(BigNumber(`1e${decimal[2].decimal}`))
                 .div(BigNumber(hyper_price[0]))
                 .div(BigNumber(`1e${decimal[1].decimal}`));
 
             var pc = [
                 {
-                    name: "HyperX/BUSD",
-                    ratio: busd_to_hyper_price.toString()
-                },
-                {
+                    id: 0,
                     name: "BNB/BUSD",
                     ratio: busd_to_bnb_price.toString()
+                },
+                {
+                    id: 1,
+                    name: "BUSD/BUSD",
+                    ratio: '1.0'
+                },
+                {
+                    id: 2,
+                    name: "HyperX/BUSD",
+                    ratio: busd_to_hyper_price.toString()
                 }
             ];
 
