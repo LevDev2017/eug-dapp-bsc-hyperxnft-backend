@@ -32230,13 +32230,13 @@
         2767
       ],
       "ContextMixin": [
-        7283
+        7281
       ],
       "Counters": [
         2841
       ],
       "EIP712Base": [
-        7399
+        7397
       ],
       "ERC1155": [
         1200
@@ -32260,7 +32260,7 @@
         3080
       ],
       "NativeMetaTransaction": [
-        7618
+        7616
       ],
       "Ownable": [
         104
@@ -32354,7 +32354,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 4340,
-        "sourceUnit": 7284,
+        "sourceUnit": 7282,
         "src": "335:53:20",
         "symbolAliases": [],
         "unitAlias": ""
@@ -32366,7 +32366,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 4340,
-        "sourceUnit": 7619,
+        "sourceUnit": 7617,
         "src": "389:62:20",
         "symbolAliases": [],
         "unitAlias": ""
@@ -32379,7 +32379,7 @@
               "id": 3588,
               "name": "ContextMixin",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 7283,
+              "referencedDeclaration": 7281,
               "src": "732:12:20"
             },
             "id": 3589,
@@ -32403,7 +32403,7 @@
               "id": 3592,
               "name": "NativeMetaTransaction",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 7618,
+              "referencedDeclaration": 7616,
               "src": "763:21:20"
             },
             "id": 3593,
@@ -32437,16 +32437,16 @@
         "linearizedBaseContracts": [
           4339,
           104,
-          7618,
-          7399,
-          7419,
+          7616,
+          7397,
+          7417,
           1200,
           1378,
           1322,
           3068,
           3080,
           2767,
-          7283
+          7281
         ],
         "name": "ERC1155Tradable",
         "nameLocation": "709:15:20",
@@ -33120,7 +33120,7 @@
                       "name": "_initializeEIP712",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 7323,
+                      "referencedDeclaration": 7321,
                       "src": "2655:17:20",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_nonpayable$_t_string_memory_ptr_$returns$__$",
@@ -38374,10 +38374,10 @@
                         "name": "ContextMixin",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 7283,
+                        "referencedDeclaration": 7281,
                         "src": "9184:12:20",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_contract$_ContextMixin_$7283_$",
+                          "typeIdentifier": "t_type$_t_contract$_ContextMixin_$7281_$",
                           "typeString": "type(contract ContextMixin)"
                         }
                       },
@@ -38388,7 +38388,7 @@
                       "lValueRequested": false,
                       "memberName": "msgSender",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 7282,
+                      "referencedDeclaration": 7280,
                       "src": "9184:22:20",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_view$__$returns$_t_address_payable_$",
@@ -41386,13 +41386,13 @@
         2767
       ],
       "ContextMixin": [
-        7283
+        7281
       ],
       "Counters": [
         2841
       ],
       "EIP712Base": [
-        7399
+        7397
       ],
       "ERC1155": [
         1200
@@ -41416,7 +41416,7 @@
         3080
       ],
       "NativeMetaTransaction": [
-        7618
+        7616
       ],
       "Ownable": [
         104
@@ -41510,7 +41510,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 4340,
-        "sourceUnit": 7284,
+        "sourceUnit": 7282,
         "src": "335:53:20",
         "symbolAliases": [],
         "unitAlias": ""
@@ -41522,7 +41522,7 @@
         "nameLocation": "-1:-1:-1",
         "nodeType": "ImportDirective",
         "scope": 4340,
-        "sourceUnit": 7619,
+        "sourceUnit": 7617,
         "src": "389:62:20",
         "symbolAliases": [],
         "unitAlias": ""
@@ -41535,7 +41535,7 @@
               "id": 3588,
               "name": "ContextMixin",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 7283,
+              "referencedDeclaration": 7281,
               "src": "732:12:20"
             },
             "id": 3589,
@@ -41559,7 +41559,7 @@
               "id": 3592,
               "name": "NativeMetaTransaction",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 7618,
+              "referencedDeclaration": 7616,
               "src": "763:21:20"
             },
             "id": 3593,
@@ -41593,16 +41593,16 @@
         "linearizedBaseContracts": [
           4339,
           104,
-          7618,
-          7399,
-          7419,
+          7616,
+          7397,
+          7417,
           1200,
           1378,
           1322,
           3068,
           3080,
           2767,
-          7283
+          7281
         ],
         "name": "ERC1155Tradable",
         "nameLocation": "709:15:20",
@@ -42276,7 +42276,7 @@
                       "name": "_initializeEIP712",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 7323,
+                      "referencedDeclaration": 7321,
                       "src": "2655:17:20",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_nonpayable$_t_string_memory_ptr_$returns$__$",
@@ -47530,10 +47530,10 @@
                         "name": "ContextMixin",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 7283,
+                        "referencedDeclaration": 7281,
                         "src": "9184:12:20",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_contract$_ContextMixin_$7283_$",
+                          "typeIdentifier": "t_type$_t_contract$_ContextMixin_$7281_$",
                           "typeString": "type(contract ContextMixin)"
                         }
                       },
@@ -47544,7 +47544,7 @@
                       "lValueRequested": false,
                       "memberName": "msgSender",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 7282,
+                      "referencedDeclaration": 7280,
                       "src": "9184:22:20",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_view$__$returns$_t_address_payable_$",
@@ -50752,7 +50752,7 @@
     }
   },
   "schemaVersion": "3.4.4",
-  "updatedAt": "2022-01-23T15:29:42.308Z",
+  "updatedAt": "2022-01-28T14:31:35.748Z",
   "devdoc": {
     "kind": "dev",
     "methods": {

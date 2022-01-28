@@ -17,6 +17,7 @@ const sale_router = require('./routes/api/sale');
 const offer_router = require('./routes/api/offer');
 const favorite_router = require('./routes/api/favorite');
 const { collection_router } = require('./routes/api/collection');
+const contract_router = require('./routes/api/contract');
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/sale', sale_router);
 app.use('/api/offer', offer_router);
 app.use('/api/favorite', favorite_router);
 app.use('/api/collection', collection_router);
+app.use('/api/contract', contract_router);
 
 const port = process.env.PORT || 8082;
 

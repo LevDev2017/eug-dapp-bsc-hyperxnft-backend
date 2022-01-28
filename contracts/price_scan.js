@@ -5,7 +5,7 @@ const ERC20 = require('./abi/erc20.json')
 const router_v2_abi = require('./abi/routerV2.json')
 const fs = require('fs');
 const chainData = require('./chainData')
-const { ROUTER_V2_ADDRESS, HYPERX_CONTRACT, WBNB_CONTRACT, BUSD_CONTRACT } = require('./address')
+const { ROUTER_V2_ADDRESS } = require('./address')
 
 const pvkey = fs.readFileSync('.secret').toString().trim();
 const models = require('../models');
@@ -19,6 +19,11 @@ const provider = new HDWalletProvider(
     'https://speedy-nodes-nyc.moralis.io/2e9dcc31990acc9b69974c3b/bsc/mainnet' // moralis mainnet RPC
     // 'https://bsc-dataseed.binance.org/' // mainnet RPC
 );
+
+const WBNB_CONTRACT = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
+const HYPERX_CONTRACT = '0x0469F8Ca65Ce318888cc0d6459d0c7cbe5912c98';
+const BUSD_CONTRACT = '0xe9e7cea3dedca5984780bafc599bd69add087d56';
+
 const web3 = new Web3(provider);
 
 var errString = '';
@@ -27,9 +32,9 @@ const price_scan = async () => {
     try {
         let router_v2 = await new web3.eth.Contract(router_v2_abi, ROUTER_V2_ADDRESS);
 
-        let hyperx = await new web3.eth.Contract(ERC20, HYPERX_CONTRACT);
-        let wbnb = await new web3.eth.Contract(ERC20, WBNB_CONTRACT);
-        let busd = await new web3.eth.Contract(ERC20, BUSD_CONTRACT);
+        let hyperx = await new web3.eth.Contract(ERC20.abi, HYPERX_CONTRACT);
+        let wbnb = await new web3.eth.Contract(ERC20.abi, WBNB_CONTRACT);
+        let busd = await new web3.eth.Contract(ERC20.abi, BUSD_CONTRACT);
 
         let decimal = [
             {
@@ -95,7 +100,7 @@ const price_scan = async () => {
                 }
             ];
 
-            // console.log(pc);
+            console.log(pc);
 
             let i;
             for (i = 0; i < pc.length; i++) {

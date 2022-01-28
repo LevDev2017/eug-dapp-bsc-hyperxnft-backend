@@ -143,7 +143,7 @@ const explorer_nfts = async () => {
             let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
 
             let collections = await contract.methods.getCollections().call({ from: accountAddress });
-            // console.log(collections);
+            console.log(collections);
 
             let i;
 
