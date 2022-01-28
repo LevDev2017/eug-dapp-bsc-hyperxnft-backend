@@ -66,7 +66,7 @@ const reload_nft = async (collectionAddress, tokenId) => {
 
     var commentCount = await Comment.find({
         collectionAddress: collectionAddress,
-        tokenId: parseInt(tokenId)
+        tokenId: tokenId
     }).countDocuments();
 
     const newItem = {
