@@ -3,15 +3,18 @@ const mongoose = require("mongoose");
 const Sale = mongoose.model(
     "Sale",
     new mongoose.Schema({
-        contract: String,
+        collectionAddress: String,
         tokenId: Number,
         payment: Number,
-        price: String,
-        days: String,
-        hhmm: String,
+        paymentName: String,
+        price: Number,
+        seller: String,
+        fee: Number,
+        royalty: Number,
         start: Date,
-        name: String,
-        address: String
+        duration: Number,
+        address: String,
+        when: Date,
     })
 );
 

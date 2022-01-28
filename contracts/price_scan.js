@@ -5,7 +5,7 @@ const ERC20 = require('./abi/erc20.json')
 const router_v2_abi = require('./abi/routerV2.json')
 const fs = require('fs');
 const chainData = require('./chainData')
-const { ROUTER_V2_ADDRESS } = require('./address')
+const { ROUTER_V2_ADDRESS, BUSD_CONTRACT, HYPERX_CONTRACT } = require('./address')
 
 const pvkey = fs.readFileSync('.secret').toString().trim();
 const models = require('../models');
@@ -20,9 +20,9 @@ const provider = new HDWalletProvider(
     // 'https://bsc-dataseed.binance.org/' // mainnet RPC
 );
 
-const WBNB_CONTRACT = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
-const HYPERX_CONTRACT = '0x0469F8Ca65Ce318888cc0d6459d0c7cbe5912c98';
-const BUSD_CONTRACT = '0xe9e7cea3dedca5984780bafc599bd69add087d56';
+const WBNB_CONTRACT_BSCMAINNET = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
+const HYPERX_CONTRACT_BSCMAINNET = '0x0469F8Ca65Ce318888cc0d6459d0c7cbe5912c98';
+const BUSD_CONTRACT_BSCMAINNET = '0xe9e7cea3dedca5984780bafc599bd69add087d56';
 
 const web3 = new Web3(provider);
 
@@ -32,40 +32,45 @@ const price_scan = async () => {
     try {
         let router_v2 = await new web3.eth.Contract(router_v2_abi, ROUTER_V2_ADDRESS);
 
-        let hyperx = await new web3.eth.Contract(ERC20.abi, HYPERX_CONTRACT);
-        let wbnb = await new web3.eth.Contract(ERC20.abi, WBNB_CONTRACT);
-        let busd = await new web3.eth.Contract(ERC20.abi, BUSD_CONTRACT);
+        let hyperx = await new web3.eth.Contract(ERC20.abi, HYPERX_CONTRACT_BSCMAINNET);
+        let wbnb = await new web3.eth.Contract(ERC20.abi, WBNB_CONTRACT_BSCMAINNET);
+        let busd = await new web3.eth.Contract(ERC20.abi, BUSD_CONTRACT_BSCMAINNET);
 
         let decimal = [
             {
                 id: 0,
                 name: "BNB",
-                decimal: await wbnb.methods.decimals().call()
+                decimal: await wbnb.methods.decimals().call(),
+                contract: '0x0000000000000000000000000000000000000000'
             },
             {
                 id: 1,
                 name: "BUSD",
-                decimal: await busd.methods.decimals().call()
+                decimal: await busd.methods.decimals().call(),
+                contract: BUSD_CONTRACT
             },
             {
                 id: 2,
                 name: "HyperX",
-                decimal: await hyperx.methods.decimals().call()
+                decimal: await hyperx.methods.decimals().call(),
+                contract: HYPERX_CONTRACT
             }
         ];
 
         let i;
         for (i = 0; i < decimal.length; i++) {
-            var items = await payment.find(decimal[i]);
+            var items = await payment.find({ id: decimal[i].id });
             if (items.length == 0) {
                 var newDec = new payment(decimal[i]);
                 await newDec.save();
+            } else {
+                await payment.findByIdAndUpdate(items[0]._id, decimal[i]);
             }
         }
 
         const reload_price = async () => {
             let BNB_unit_amount = BigNumber(`1e${decimal[0].decimal}`);
-            let routerPairForBnb = [WBNB_CONTRACT, BUSD_CONTRACT];
+            let routerPairForBnb = [WBNB_CONTRACT_BSCMAINNET, BUSD_CONTRACT_BSCMAINNET];
 
             let bnb_price = await router_v2.methods.getAmountsOut(BNB_unit_amount, routerPairForBnb).call();
             let busd_to_bnb_price = BigNumber(bnb_price[1])
@@ -74,7 +79,7 @@ const price_scan = async () => {
                 .div(BigNumber(`1e${decimal[1].decimal}`));
 
             let HYPER_unit_amount = BigNumber(`1e${decimal[2].decimal}`);
-            let routerPairForHyper = [HYPERX_CONTRACT, BUSD_CONTRACT];
+            let routerPairForHyper = [HYPERX_CONTRACT_BSCMAINNET, BUSD_CONTRACT_BSCMAINNET];
 
             let hyper_price = await router_v2.methods.getAmountsOut(HYPER_unit_amount, routerPairForHyper).call();
             let busd_to_hyper_price = BigNumber(hyper_price[1])

@@ -5,7 +5,8 @@ const Payment = mongoose.model(
     new mongoose.Schema({
         id: Number,
         name: String,
-        decimal: Number
+        decimal: Number,
+        contract: String
     })
 );
 

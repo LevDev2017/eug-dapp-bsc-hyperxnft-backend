@@ -14,54 +14,50 @@ const NFT = models.NFT;
 router.put('/', async (req, res) => {
     try {
         const {
-            contract: contract,
-            tokenId: tokenId,
-            payment: payment,
-            price: price,
-            days: days,
-            hhmm: hhmm,
-            name: name,
-            address: addr
+            collectionAddress,
+            tokenId,
+            payment,
+            paymentName,
+            price,
+            seller,
+            fee,
+            royalty,
+            duration,
+            address
         } = req.body;
 
         const items = await NFT.find({
-            contract: contract,
+            collectionAddress: collectionAddress,
             tokenId: tokenId
         });
 
+        let nowDate = new Date();
+
         if (items.length === 0) {
-            res.json({ msg: 'no nft item found'});
-        } else if (items[0].onSale !== true) {
-            res.json({ msg: 'The nft item is not allowed to be on sale'});
+            res.json({ msg: 'no nft item found', result: 0});
         } else {
-            const pi = await Sale.find({
-                contract: contract,
-                tokenId: tokenId
+            let newSale = new Sale({
+                collectionAddress: collectionAddress,
+                tokenId: tokenId,
+                payment: payment,
+                paymentName: paymentName,
+                price: price,
+                seller: seller,
+                fee: fee,
+                royalty: royalty,
+                start: nowDate,
+                duration: duration,
+                address: address,
+                when: nowDate,
             });
-    
-            if (pi.length > 0) {
-                res.json({ msg: 'already on sale' });
-            } else {
-                let newSale = new Sale({
-                    contract: contract,
-                    tokenId: tokenId,
-                    payment: payment,
-                    price: price,
-                    days: days,
-                    hhmm: hhmm,
-                    start: new Date(),
-                    name: name,
-                    address: addr
-                });
 
-                await newSale.save();
+            await newSale.save();
 
-                res.json({ msg: 'put on sale', res: newSale });
-            }
+            res.json({ msg: 'Sync to server', result: 1 });
         }
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}` });
+        res.json({ msg: `error: ${err}`, result: 0 });
     }
 });
 
