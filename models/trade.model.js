@@ -1,24 +1,28 @@
 const mongoose = require("mongoose");
 
-const Sale = mongoose.model(
-    "Sale",
+const Trade = mongoose.model(
+    "Trade",
     new mongoose.Schema({
         collectionAddress: String,
         tokenId: Number,
         saleId: Number,
         copy: Number,
-        method: Number,
-        payment: Number,
+        method: String,
         paymentName: String,
-        price: Number,
+        basePrice: Number,
         seller: String,
         sellerName: String,
         fee: Number,
         royalty: Number,
-        start: Date,
-        duration: Number,
+        winner: String,
+        winnerName: String,
+        payOut: Number,
+        creator: String,
+        creatorName: String,
+        owner: String,
+        ownerName: String,
         when: Date,
     })
 );
 
-module.exports = Sale;
+module.exports = Trade;

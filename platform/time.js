@@ -32,4 +32,11 @@ const getTimeGap = (now, past) => {
     return `${Math.floor(span)} years ago`;
 }
 
-module.exports = { getTimeGap };
+const getTimeGapSeconds = (now, past) => {
+    var span = now.getTime() - past.getTime();
+    span /= 1000;
+
+    return span;
+}
+
+module.exports = { getTimeGap, getTimeGapSeconds };

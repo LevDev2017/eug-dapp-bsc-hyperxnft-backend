@@ -11,7 +11,7 @@ const singleCollectionContract = ERC721Tradable.abi;
 const ERC1155Tradable = require('./abi/ERC1155Tradable.json')
 const multipleCollectionContract = ERC1155Tradable.abi;
 const { addRawCollection } = require('../routes/api/collection');
-const { NFT_FACTORY_CONTRACT_ADDRESS } = require('./address')
+const { NFT_FACTORY_CONTRACT_ADDRESS, BUSD_CONTRACT, HYPERX_CONTRACT } = require('./address')
 
 const models = require('../models');
 const NFT = models.NFT;
@@ -140,6 +140,8 @@ const explorer_nfts = async () => {
 
     const list_nft = async () => {
         try {
+            await bindPaymentToken();
+
             let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
 
             let collections = await contract.methods.getCollections().call({ from: accountAddress });
@@ -188,4 +190,26 @@ const explorer_nfts = async () => {
     recursive_run();
 }
 
-module.exports = { explorer_nfts, reload_nft };
+const bindPaymentToken = async () => {
+    let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
+
+    let cnt = await contract.methods.getPaymentToken().call({ from: accountAddress });
+
+    if (cnt.length < 2) {
+        let tx = await contract.methods.setPaymentToken(1, BUSD_CONTRACT).send({ from: accountAddress });
+        // console.log('Registering BUSD token ...', tx);
+    }
+
+    if (cnt.length < 3) {
+        let tx = await contract.methods.setPaymentToken(2, HYPERX_CONTRACT).send({ from: accountAddress });
+        // console.log('Registering HyperX token ...', tx);
+    }
+
+    let newCnt = await contract.methods.getPaymentToken().call({ from: accountAddress });
+    if (cnt.length < 3 && newCnt.length === 3) {
+        console.log('payment tokens deployed', newCnt);
+    }
+};
+
+module.exports = { explorer_nfts, reload_nft, web3 };
+

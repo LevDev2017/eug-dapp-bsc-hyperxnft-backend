@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const models = require('../../models');
-const {delay} = require('../../platform/wait');
+const { delay } = require('../../platform/wait');
 
 const NFT = models.NFT;
 
@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
             if (items !== undefined) {
                 res.json({ msg: 'found', result: items.length, nft: items });
             } else {
-                res.json({ msg: 'not found', result: 0, nft: []});
+                res.json({ msg: 'not found', result: 0, nft: [] });
             }
         } else {
             var filter_text = "";
@@ -108,15 +108,15 @@ router.get('/:address/:id', async (req, res) => {
     }
 });
 
-router.put('/reload', async (req, res) => {
-    const {collectionAddress, tokenId} = req.body;
+router.post('/reload', async (req, res) => {
+    const { collectionAddress, tokenId } = req.body;
     await reload_nft(collectionAddress, tokenId);
-    res.json({ result: 1});
+    res.json({ result: 1 });
 });
 
 router.put('/new', async (req, res) => {
     try {
-        var ret = await new NFT({
+        let newItem = {
             collectionAddress: req.body.collectionAddress,
             tokenId: req.body.tokenId,
             URI: req.body.URI,
@@ -130,14 +130,25 @@ router.put('/new', async (req, res) => {
             description: req.body.description,
             attributes: req.body.attributes,
             tags: req.body.tags,
+            priceUSD: 0,
             favoriteCount: 0,
             commentCount: 0,
             timestamp: new Date()
-        });
+        };
 
-        await ret.save();
+        var items = await NFT.find({
+            collectionAddress: newItem.collectionAddress,
+            tokenId: newItem.tokenId,
+        })
 
-        res.json({msg: 'added a new NFT', result: 1});
+        if (items.length > 0) {
+            await NFT.findByIdAndUpdate(items[0]._id, newItem);
+        } else {
+            var ret = await new NFT(newItem);
+            await ret.save();
+        }
+
+        res.json({ msg: 'added a new NFT', result: 1 });
     } catch (err) {
         console.log(err);
         res.json({ msg: `error: ${err}`, result: 0 });

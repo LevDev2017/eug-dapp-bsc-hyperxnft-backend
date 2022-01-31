@@ -24,17 +24,17 @@ const WBNB_CONTRACT_BSCMAINNET = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 const HYPERX_CONTRACT_BSCMAINNET = '0x0469F8Ca65Ce318888cc0d6459d0c7cbe5912c98';
 const BUSD_CONTRACT_BSCMAINNET = '0xe9e7cea3dedca5984780bafc599bd69add087d56';
 
-const web3 = new Web3(provider);
+const web3PriceScan = new Web3(provider);
 
 var errString = '';
 
 const price_scan = async () => {
     try {
-        let router_v2 = await new web3.eth.Contract(router_v2_abi, ROUTER_V2_ADDRESS);
+        let router_v2 = await new web3PriceScan.eth.Contract(router_v2_abi, ROUTER_V2_ADDRESS);
 
-        let hyperx = await new web3.eth.Contract(ERC20.abi, HYPERX_CONTRACT_BSCMAINNET);
-        let wbnb = await new web3.eth.Contract(ERC20.abi, WBNB_CONTRACT_BSCMAINNET);
-        let busd = await new web3.eth.Contract(ERC20.abi, BUSD_CONTRACT_BSCMAINNET);
+        let hyperx = await new web3PriceScan.eth.Contract(ERC20.abi, HYPERX_CONTRACT_BSCMAINNET);
+        let wbnb = await new web3PriceScan.eth.Contract(ERC20.abi, WBNB_CONTRACT_BSCMAINNET);
+        let busd = await new web3PriceScan.eth.Contract(ERC20.abi, BUSD_CONTRACT_BSCMAINNET);
 
         let decimal = [
             {

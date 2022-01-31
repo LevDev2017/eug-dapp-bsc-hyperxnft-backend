@@ -7,6 +7,7 @@ const models = require('../../models');
 
 const Comment = models.comment;
 const Favorite = models.favorite;
+const NFT = models.NFT;
 
 // @route POST api/comment
 // @description post comment information request from users
@@ -45,6 +46,13 @@ router.post('/', async (req, res) => {
     });
 
     await newHistory.save();
+
+    let cnt = await Comment.find({ collectionAddress: newHistory.collectionAddress, tokenId: newHistory.tokenId }).countDocuments();
+    let nftItems = await NFT.find({ collectionAddress: newHistory.collectionAddress, tokenId: newHistory.tokenId });
+    if (nftItems.length > 0) {
+        nftItems[0].commentCount = cnt;
+        await NFT.findByIdAndUpdate(nftItems[0]._id, nftItems[0]);
+    }
 
     res.json({msg: 'ok', result: 1});
 });
