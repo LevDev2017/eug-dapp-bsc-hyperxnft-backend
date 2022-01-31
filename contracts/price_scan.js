@@ -129,21 +129,21 @@ const price_scan = async () => {
                 })
                 .catch(err => {
                     let errText = err.toString();
-                    if (errString != errText) {
+                    // if (errString != errText) {
                         console.log("reload_price: ", errText);
                         errString = errText;
-                    }
-                    setTimeout(recursive_run, 1000);
+                    // }
+                    setTimeout(price_scan, 1000);
                 })
         }
 
         recursive_run();
     } catch (err) {
         let errText = err.toString();
-        if (errString != errText) {
+        // if (errString != errText) {
             console.log("price_scan: ", err);
             errString = errText;
-        }
+        // }
 
         setTimeout(price_scan, 1000);
         return;
