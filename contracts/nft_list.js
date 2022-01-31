@@ -19,6 +19,7 @@ const Favorite = models.favorite;
 const Comment = models.comment;
 
 const pvkey = fs.readFileSync('.secret').toString().trim();
+const chainIdNumber = parseInt(chainData.chainId, 16);
 
 const provider = new HDWalletProvider(
     pvkey,
@@ -196,13 +197,13 @@ const bindPaymentToken = async () => {
     let cnt = await contract.methods.getPaymentToken().call({ from: accountAddress });
 
     if (cnt.length < 2) {
-        let tx = await contract.methods.setPaymentToken(1, BUSD_CONTRACT).send({ from: accountAddress });
-        // console.log('Registering BUSD token ...', tx);
+        let tx = await contract.methods.setPaymentToken(1, BUSD_CONTRACT).send({ from: accountAddress, chainId: chainIdNumber });
+        console.log('Registering BUSD token ...', tx);
     }
 
     if (cnt.length < 3) {
-        let tx = await contract.methods.setPaymentToken(2, HYPERX_CONTRACT).send({ from: accountAddress });
-        // console.log('Registering HyperX token ...', tx);
+        let tx = await contract.methods.setPaymentToken(2, HYPERX_CONTRACT).send({ from: accountAddress, chainId: chainIdNumber });
+        console.log('Registering HyperX token ...', tx);
     }
 
     let newCnt = await contract.methods.getPaymentToken().call({ from: accountAddress });

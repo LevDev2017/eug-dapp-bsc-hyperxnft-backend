@@ -12,12 +12,12 @@ const Collection = models.collection;
 // @description add a new collection request from users
 // @access public
 
-router.post('/new/', (req, res) => {
+router.post('/new/', async (req, res) => {
     let collectionData = req.body;
 
     collectionData.timestamp = new Date();
 
-    var items = Collection.find({
+    var items = await Collection.find({
         contractAddress: collectionData.contractAddress
     });
 
@@ -26,14 +26,14 @@ router.post('/new/', (req, res) => {
     } else if (items.length == 1) {
         let found = items[0];
         if (found.user == '' && found.walletAddress == '') {
-            Collection.findByIdAndUpdate(collectionData);
+            await Collection.findByIdAndUpdate(collectionData);
             res.json({ msg: 'updated collection info', result: 1 });
         } else {
             res.json({ msg: 'already exists', result: 0 });
         }
     } else {
-        var ret = new Collection(collectionData);
-        ret.save();
+        var ret = await new Collection(collectionData);
+        await ret.save();
         res.json({ msg: 'added a new one', result: 1 });
     }
 });

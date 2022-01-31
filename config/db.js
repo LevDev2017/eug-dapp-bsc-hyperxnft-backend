@@ -5,20 +5,22 @@ const config = require('config');
 const db = config.get('mongoURI');
 
 const connectDB = async () => {
-    try {
-        await mongoose.connect(
-            db,
-            {
-                useNewUrlParser: true, 
-                useUnifiedTopology: true
-            }
-        );
+    while (1) {
+        try {
+            await mongoose.connect(
+                db,
+                {
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true
+                }
+            );
 
-        console.log('MongoDB is Connected...');
-        await initial();
-    } catch (err) {
-        console.error(err.message);
-        process.exit(1);
+            console.log('MongoDB is Connected...');
+            await initial();
+            break;
+        } catch (err) {
+            console.error(err.message);
+        }
     }
 };
 
@@ -77,7 +79,7 @@ async function initial() {
         }
     ];
 
-    await creators.forEach ( async (item, index) => {
+    await creators.forEach(async (item, index) => {
         var ret = await Creator.find(item);
         if (ret === undefined || ret.length == 0) {
             ret = new Creator({
