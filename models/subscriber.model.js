@@ -7,6 +7,11 @@ const Subscriber = mongoose.model(
         email: String,
         password: String,
         address: String,
+        avatarURI: String,
+        coverURI: String,
+        businessName: String,
+        bio: String,
+        notification: String,
         roles: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "Role"

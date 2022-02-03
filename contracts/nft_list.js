@@ -212,5 +212,31 @@ const bindPaymentToken = async () => {
     }
 };
 
-module.exports = { explorer_nfts, reload_nft, web3 };
+const startPendingCreator = async (address) => {
+    console.log('---------------------- startPendingCreator');
+    try {
+        let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
+
+        let tx = await contract.methods.startPendingCreator(address, true).send({ from: accountAddress, chainId: chainIdNumber });
+        console.log('startPendingCreator ...', tx);
+        return tx;
+    } catch (err) {
+        console.log(err.message);
+    }
+}
+
+const endPendingCreator = async (address) => {
+    console.log('---------------------- endPendingCreator');
+    try {
+        let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
+
+        let tx = await contract.methods.endPendingCreator(address).send({ from: accountAddress, chainId: chainIdNumber });
+        console.log('endPendingCreator ...', tx);
+        return tx;
+    } catch (err) {
+        console.log(err.message);
+    }
+}
+
+module.exports = { explorer_nfts, reload_nft, web3, startPendingCreator, endPendingCreator };
 

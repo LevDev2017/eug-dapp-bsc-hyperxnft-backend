@@ -41,7 +41,7 @@ router.post('/', (req, res) => {
 
                     await newHistory.save();
 
-                    res.json({ msg: 'signed in', result: 1, role: role.name });
+                    res.json({ msg: 'signed in', result: 1, role: role.name, info: item[0] });
                 } else {
                     var waUser = await Subscriber.find({
                         address: signinData.address
@@ -51,7 +51,7 @@ router.post('/', (req, res) => {
                     if (waUser !== undefined && waUser.length > 0) {
                         msgText += `\nPlease sign in as ${waUser[0].name} instead`;
                     }
-                    res.json({ msg:  msgText});
+                    res.json({ msg: msgText });
                 }
             } else {
                 // not found by name, try to find by email.
@@ -80,7 +80,7 @@ router.post('/', (req, res) => {
 
                                 await newHistory.save();
 
-                                res.json({ msg: 'signed in', result: 1, role: role.name });
+                                res.json({ msg: 'signed in', result: 1, role: role.name, info: item[0] });
                             } else {
                                 res.json({ msg: `failed to sign in, ${item[0].name} has already signed up with ${item[0].address}` });
                             }
@@ -98,6 +98,62 @@ router.post('/', (req, res) => {
         .catch(async (err) => {
             console.log(`failed to look up subscriber list to sign in: ${err}`);
             res.json({ msg: 'failed to sign in', result: 0 });
+        })
+});
+
+
+// @route POST api/signin/profile
+// @description update profile request from users
+// @access public
+
+router.post('/profile', (req, res) => {
+    const profileData = req.body;
+
+    Subscriber.find({
+        name: profileData.name,
+        password: profileData.password,
+        address: profileData.address
+    })
+        .then(async (item) => {
+            if (item.length > 0) {
+                if (profileData.avatar !== undefined) {
+                    await Subscriber.findByIdAndUpdate(item[0]._id, {
+                        avatarURI: profileData.avatar
+                    });
+                }
+
+                if (profileData.cover !== undefined) {
+                    await Subscriber.findByIdAndUpdate(item[0]._id, {
+                        coverURI: profileData.cover
+                    });
+                }
+
+                if (profileData.businessName !== undefined) {
+                    await Subscriber.findByIdAndUpdate(item[0]._id, {
+                        businessName: profileData.businessName
+                    });
+                }
+
+                if (profileData.bio !== undefined) {
+                    await Subscriber.findByIdAndUpdate(item[0]._id, {
+                        bio: profileData.bio
+                    });
+                }
+
+                if (profileData.notification !== undefined) {
+                    await Subscriber.findByIdAndUpdate(item[0]._id, {
+                        notification: profileData.notification
+                    });
+                }
+
+                res.json({ msg: 'Updated profile information', result: 1 });
+            } else {
+                res.json({ msg: 'No subscriber found', result: 0 });
+            }
+        })
+        .catch(async (err) => {
+            console.log(`failed to look up subscriber list to sign in: ${err}`);
+            res.json({ msg: 'failed to find a user', result: 0 });
         })
 });
 

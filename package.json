@@ -29,6 +29,7 @@
     "express": "^4.17.1",
     "fs": "^0.0.1-security",
     "mongoose": "^6.1.2",
+    "sha.js": "^2.4.11",
     "truffle-hdwallet-provider": "^1.0.17",
     "validation": "0.0.1",
     "web3": "^1.6.1"

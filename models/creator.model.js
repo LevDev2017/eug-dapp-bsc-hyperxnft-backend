@@ -3,9 +3,16 @@ const mongoose = require("mongoose");
 const Creator = mongoose.model(
     "Creator",
     new mongoose.Schema({
-        email: String,
+        address: String,
         name: String,
+        email: String,
         password: String,
+        projectName: String,
+        projectDescription: String,
+        category: String,
+        tags: String,
+        status: String,
+
         roles: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "Role"

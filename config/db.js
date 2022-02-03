@@ -30,6 +30,7 @@ const Subscriber = models.subscriber;
 const Creator = models.creator;
 
 async function initial() {
+    return;
     const count = await Role.estimatedDocumentCount();
 
     if (count == 0) {
