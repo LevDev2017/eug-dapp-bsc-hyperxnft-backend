@@ -47,13 +47,13 @@ const price_scan = async () => {
                 id: 1,
                 name: "BUSD",
                 decimal: await busd.methods.decimals().call(),
-                contract: BUSD_CONTRACT
+                contract: BUSD_CONTRACT.toLowerCase()
             },
             {
                 id: 2,
                 name: "HyperX",
                 decimal: await hyperx.methods.decimals().call(),
-                contract: HYPERX_CONTRACT
+                contract: HYPERX_CONTRACT.toLowerCase()
             }
         ];
 

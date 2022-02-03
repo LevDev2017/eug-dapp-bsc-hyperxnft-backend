@@ -16,9 +16,11 @@ router.post('/new/', async (req, res) => {
     let collectionData = req.body;
 
     collectionData.timestamp = new Date();
+    collectionData.contractAddress = collectionData.contractAddress.toLowerCase();
+    collectionData.walletAddress = collectionData.walletAddress.toLowerCase();
 
     var items = await Collection.find({
-        contractAddress: collectionData.contractAddress
+        contractAddress: collectionData.contractAddress.toLowerCase()
     });
 
     if (items.length > 1) {
@@ -50,12 +52,12 @@ router.get('/', async (req, res) => {
             res.json({ msg: 'ok', result: 1, collections: items });
         } else if (extra === 'onlyOwner') {
             var items = await Collection.find({
-                walletAddress: owner
+                walletAddress: owner.toLowerCase()
             });
             res.json({ msg: 'ok', result: 1, collections: items });
         } else if (extra === 'one') {
             var items = await Collection.find({
-                contractAddress: address,
+                contractAddress: address.toLowerCase(),
             });
             res.json({ msg: 'ok', result: 1, collections: items });
         } else {
@@ -74,7 +76,7 @@ const addRawCollection = async (addr, owner) => {
     });
 
     var items = await Collection.find({
-        contractAddress: addr
+        contractAddress: addr.toLowerCase()
     });
 
     if (items.length == 0) {
@@ -83,14 +85,14 @@ const addRawCollection = async (addr, owner) => {
             description: '',
             bannerURI: '',
             logoURI: '',
-            contractAddress: addr,
+            contractAddress: addr.toLowerCase(),
             user: users.length == 1 ? users[0].name : '',
             walletAddress: owner.toLowerCase(),
             timestamp: new Date()
         });
         await ret.save();
 
-        console.log(`raw collection ${addr} added`);
+        console.log(`raw collection ${addr.toLowerCase()} added`);
     }
 }
 

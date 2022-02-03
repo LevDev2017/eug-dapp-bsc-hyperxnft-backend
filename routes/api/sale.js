@@ -33,7 +33,7 @@ router.put('/', async (req, res) => {
         } = req.body;
 
         const items = await NFT.find({
-            collectionAddress: collectionAddress,
+            collectionAddress: collectionAddress.toLowerCase(),
             tokenId: tokenId
         });
 
@@ -48,7 +48,7 @@ router.put('/', async (req, res) => {
 
             if (users.length > 0) {
                 let newSale = new Sale({
-                    collectionAddress: collectionAddress,
+                    collectionAddress: collectionAddress.toLowerCase(),
                     tokenId: tokenId,
                     saleId: saleId,
                     copy: copy,
@@ -56,7 +56,7 @@ router.put('/', async (req, res) => {
                     method: method,
                     paymentName: paymentName,
                     price: price,
-                    seller: seller,
+                    seller: seller.toLowerCase(),
                     sellerName: users[0].name,
                     fee: fee,
                     royalty: royalty,
@@ -90,6 +90,8 @@ router.put('/', async (req, res) => {
                     await NFT.findByIdAndUpdate(items[0]._id, items[0]);
                 }
 
+                await updateSubscriberPrice(newSale.seller, newSale.price, newSale.payment);
+
                 res.json({ msg: 'Sync to server', result: 1 });
             } else {
                 res.json({ msg: 'Unknown user', result: 0 });
@@ -106,13 +108,13 @@ router.get('/', async (req, res) => {
         const { collectionAddress, tokenId } = req.query;
 
         var fixed_items = await Sale.find({
-            collectionAddress: collectionAddress,
+            collectionAddress: collectionAddress.toLowerCase(),
             tokenId: parseInt(tokenId),
             method: 0
         });
 
         var auction_items = await Sale.find({
-            collectionAddress: collectionAddress,
+            collectionAddress: collectionAddress.toLowerCase(),
             tokenId: parseInt(tokenId),
             method: 1
         });
@@ -132,5 +134,36 @@ router.get('/', async (req, res) => {
         res.json({ msg: `error ${err}`, result: 0 });
     }
 });
+
+const updateSubscriberPrice = async (user, price, payment) => {
+    let ret = await Subscriber.find({
+        address: user.toLowerCase()
+    })
+
+    if (ret.length == 0) return;
+
+    let priceConvs = await PaymentConversion.find({ id: payment });
+    if (priceConvs.length === 0) return;
+
+    let priceValue = parseFloat(BigNumber(price).times(BigNumber(priceConvs[0].ratio)).toString());
+
+    let item = ret[0];
+
+    if (item.floorPrice === undefined) {
+        item.floorPrice = 0.0;
+    }
+
+    if (item.ceilPrice === undefined) {
+        item.ceilPrice = 0.0;
+    }
+
+    if (item.floorPrice == 0.0 || item.floorPrice > priceValue)
+        item.floorPrice = priceValue;
+
+    if (item.ceilPrice == 0.0 || item.ceilPrice < priceValue)
+        item.ceilPrice = priceValue;
+
+    await Subscriber.findByIdAndUpdate(item._id, item);
+}
 
 module.exports = router;

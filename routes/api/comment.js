@@ -8,6 +8,7 @@ const models = require('../../models');
 const Comment = models.comment;
 const Favorite = models.favorite;
 const NFT = models.NFT;
+const Subscriber = models.subscriber;
 
 // @route POST api/comment
 // @description post comment information request from users
@@ -15,6 +16,9 @@ const NFT = models.NFT;
 
 router.post('/', async (req, res) => {
     const commentData = req.body;
+
+    commentData.collectionAddress = commentData.collectionAddress.toLowerCase();
+    commentData.address = commentData.address.toLowerCase();
 
     var strNow = new Date().toLocaleString();
     // console.log("now: ", strNow);
@@ -54,6 +58,14 @@ router.post('/', async (req, res) => {
         await NFT.findByIdAndUpdate(nftItems[0]._id, nftItems[0]);
     }
 
+    let users = await Subscriber.find({ address: commentData.address });
+    if (users.length > 0) {
+        let user = users[0];
+        if (user.commentCount === undefined) user.commentCount = 0;
+        user.commentCount ++;
+        await Subscriber.findByIdAndUpdate(user._id, user);
+    }
+
     res.json({msg: 'ok', result: 1});
 });
 
@@ -65,7 +77,7 @@ router.get('/', async (req, res) => {
     try {
         const { collectionAddress, tokenId } = req.query;
         var items = await Comment.find({
-            collectionAddress: collectionAddress,
+            collectionAddress: collectionAddress.toLowerCase(),
             tokenId: parseInt(tokenId)
         });
 
@@ -93,7 +105,7 @@ router.get('/count', async (req, res) => {
     try {
         const { collectionAddress, tokenId } = req.query;
         var items = await Comment.find({
-            collectionAddress: collectionAddress,
+            collectionAddress: collectionAddress.toLowerCase(),
             tokenId: parseInt(tokenId)
         });
 

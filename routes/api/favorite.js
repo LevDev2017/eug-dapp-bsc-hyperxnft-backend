@@ -6,6 +6,7 @@ const models = require('../../models');
 
 const Favorite = models.favorite;
 const NFT = models.NFT;
+const Subscriber = models.subscriber;
 
 // @route PUT api/favorite
 // @description put favorite information request from users
@@ -14,12 +15,12 @@ const NFT = models.NFT;
 router.put('/', async (req, res) => {
     try {
         const {
-            contract,
             tokenId,
             name,
-            address,
             update
         } = req.body;
+        const contract = req.body.contract.toLowerCase();
+        const address = req.body.address.toLowerCase();
 
         let items = await Favorite.find({
             collectionAddress: contract,
@@ -53,8 +54,31 @@ router.put('/', async (req, res) => {
                 await NFT.findByIdAndUpdate(nftItems[0]._id, nftItems[0]);
             }
 
+            let users = await Subscriber.find({ address: address });
+            if (users.length > 0) {
+                let user = users[0];
+                if (user.favoriteCount === undefined) user.favoriteCount = 0;
+                user.favoriteCount++;
+                await Subscriber.findByIdAndUpdate(user._id, user);
+            }
+
             res.json({ msg: 'added favorite', result: 1 });
         } else {
+            let cnt = await Favorite.find({ collectionAddress: contract, tokenId: tokenId }).countDocuments();
+            let nftItems = await NFT.find({ collectionAddress: contract, tokenId: tokenId });
+            if (nftItems.length > 0) {
+                nftItems[0].favoriteCount = cnt;
+                await NFT.findByIdAndUpdate(nftItems[0]._id, nftItems[0]);
+            }
+
+            let users = await Subscriber.find({ address: address });
+            if (users.length > 0) {
+                let user = users[0];
+                if (user.favoriteCount === undefined) user.favoriteCount = 0;
+                user.favoriteCount--;
+                await Subscriber.findByIdAndUpdate(user._id, user);
+            }
+
             res.json({ msg: 'removed favorite', result: 1 });
         }
     } catch (err) {
@@ -71,7 +95,7 @@ router.get('/', async (req, res) => {
     try {
         const { collectionAddress, tokenId, account } = req.query;
         var items = await Favorite.find({
-            collectionAddress: collectionAddress,
+            collectionAddress: collectionAddress.toLowerCase(),
             tokenId: parseInt(tokenId)
         });
 
@@ -96,7 +120,7 @@ router.get('/count', async (req, res) => {
     try {
         const { contract, tokenId } = req.query;
         var items = await Favorite.find({
-            collectionAddress: contract,
+            collectionAddress: contract.toLowerCase(),
             tokenId: parseInt(tokenId)
         });
 

@@ -26,7 +26,7 @@ router.put('/', async (req, res) => {
         } = req.body;
 
         const items = await NFT.find({
-            contract: contract,
+            contract: contract.toLowerCase(),
             tokenId: tokenId
         });
 
@@ -36,7 +36,7 @@ router.put('/', async (req, res) => {
             res.json({ msg: 'The nft item is not allowed to be on sale' });
         } else {
             let newOffer = new Offer({
-                contract: contract,
+                contract: contract.toLowerCase(),
                 tokenId: tokenId,
                 quantity: quantity,
                 payment: payment,
@@ -45,7 +45,7 @@ router.put('/', async (req, res) => {
                 hhmm: hhmm,
                 start: new Date(),
                 name: name,
-                address: addr
+                address: addr.toLowerCase()
             });
 
             await newOffer.save();

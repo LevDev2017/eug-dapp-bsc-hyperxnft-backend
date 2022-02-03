@@ -37,7 +37,7 @@ router.post('/', (req, res) => {
                     action: "sign-out",
                     email: oldItem.email,
                     name: oldItem.name,
-                    address: oldItem.address,
+                    address: oldItem.address.toLowerCase(),
                     role: role.name,
                     time: strNow
                 });
@@ -67,7 +67,7 @@ router.post('/', (req, res) => {
                                 action: "sign-out",
                                 email: oldItem.email,
                                 name: oldItem.name,
-                                address: oldItem.address,
+                                address: oldItem.address.toLowerCase(),
                                 role: role.name,
                                 time: strNow
                             });

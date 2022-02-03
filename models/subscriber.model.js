@@ -15,7 +15,14 @@ const Subscriber = mongoose.model(
         roles: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "Role"
-        }]
+        }],
+        floorPrice: Number,
+        ceilPrice: Number,
+        volumeTrade: Number,
+        holders: Number,
+        items: Number,
+        favoriteCount: Number,
+        commentCount: Number,
     })
 );
 

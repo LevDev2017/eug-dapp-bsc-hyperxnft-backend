@@ -18,6 +18,7 @@ db.trade = require("./trade.model");
 db.offer = require("./offer.model");
 db.favorite = require("./favorite.model");
 db.collection = require("./collection.model");
+db.owner = require("./owner.model");
 
 db.ROLES = ["user", "creator", "admin"];
 

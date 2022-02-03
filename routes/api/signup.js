@@ -24,7 +24,7 @@ router.post('/', (req, res) => {
         email: signupData.email,
         name: signupData.name,
         password: signupData.password,
-        address: signupData.address
+        address: signupData.address.toLowerCase()
     })
         .then(async (item) => {
             // not signed up user, check if it is in the list of creators
@@ -34,7 +34,7 @@ router.post('/', (req, res) => {
                 var found = await Creator.find({
                     email: signupData.email,
                     name: signupData.name,
-                    address: signupData.address
+                    address: signupData.address.toLowerCase()
                 });
 
                 if (found !== undefined && found.length > 0) {
@@ -55,7 +55,7 @@ router.post('/', (req, res) => {
                     address_found[0].name = signupData.name;
                     address_found[0].email = signupData.email;
                     address_found[0].password = signupData.password;
-                    address_found[0].address = signupData.address;
+                    address_found[0].address = signupData.address.toLowerCase();
                     address_found[0].roles = [role._id];
 
                     await Subscriber.findByIdAndUpdate(address_found[0]._id, address_found[0]);
@@ -65,7 +65,7 @@ router.post('/', (req, res) => {
                         name: signupData.name,
                         email: signupData.email,
                         password: signupData.password,
-                        address: signupData.address,
+                        address: signupData.address.toLowerCase(),
                         roles: [role._id]
                     }
                     var ret = new Subscriber(newItem);
@@ -82,13 +82,23 @@ router.post('/', (req, res) => {
                     action: "sign-up",
                     email: signupData.email,
                     name: signupData.name,
-                    address: signupData.address,
+                    address: signupData.address.toLowerCase(),
                     role: role.name,
                     time: strNow
                 });
 
                 await newHistory.save();
             } else {
+                var found = await Creator.find({
+                    email: signupData.email,
+                    name: signupData.name,
+                    address: signupData.address.toLowerCase()
+                });
+
+                if (found !== undefined && found.length > 0 && item[0].roles[0] != found[0].roles[0]) {
+                    item[0].roles = found[0].roles;
+                    await Subscriber.findByIdAndUpdate(item[0]._id, item[0]);
+                }
                 var role = await Role.findById(item[0].roles[0]);
                 res.json({ msg: 'already signed up', result: 1, role: role.name, info: item[0] });
             }
@@ -110,7 +120,7 @@ router.post('/creator', async (req, res) => {
         });
 
         let newItem = {
-            address: signupCreatorData.address,
+            address: signupCreatorData.address.toLowerCase(),
             name: signupCreatorData.name,
             email: signupCreatorData.email,
             password: signupCreatorData.password,
@@ -174,7 +184,7 @@ const permitCreator = async (creatorInfo) => {
                 ret = 3;
             } else {
                 let signupUsers = await Subscriber.find({
-                    address: items[0].address,
+                    address: items[0].address.toLowerCase(),
                     name: items[0].name,
                     email: items[0].email
                 });

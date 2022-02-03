@@ -4,10 +4,13 @@ const express = require('express');
 const router = express.Router();
 const models = require('../../models');
 const { delay } = require('../../platform/wait');
+const { reload_nft, getBalance } = require('../../contracts/nft_list');
 
 const NFT = models.NFT;
-
-const { reload_nft } = require('../../contracts/nft_list');
+const Owner = models.owner;
+const Trade = models.trade;
+const Subscriber = models.subscriber;
+const Role = models.role;
 
 // @route POST api/nft
 // @description nft prodecure from users
@@ -94,7 +97,7 @@ router.get('/', async (req, res) => {
 router.get('/:address/:id', async (req, res) => {
     try {
         var items = await NFT.find({
-            collectionAddress: req.params.address,
+            collectionAddress: req.params.address.toLowerCase(),
             tokenId: parseInt(req.params.id)
         });
         if (items.length > 0) {
@@ -108,16 +111,82 @@ router.get('/:address/:id', async (req, res) => {
     }
 });
 
+router.get('/owner', async (req, res) => {
+    try {
+        var items = await Owner.find({
+            owner: req.query.address.toLowerCase(),
+            balance: { $gt: 0 },
+        })
+        if (items.length > 0) {
+            res.json({ msg: 'found', result: 1, items: items });
+        } else {
+            res.json({ msg: 'not found', result: 0 });
+        }
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error: ${err}` });
+    }
+});
+
+router.get('/statistics', async (req, res) => {
+    try {
+        let ret = {};
+        let address = req.query.address.toLowerCase();
+        let users = await Subscriber.find({ address: address });
+
+        if (users.length == 0) return;
+
+        ret.items = users[0].items;
+        ret.holders = users[0].holders;
+        ret.floorPrice = users[0].floorPrice;
+        ret.favoriteCount = users[0].favoriteCount;
+        ret.commentCount = users[0].commentCount;
+        ret.volumeTrade = users[0].volumeTrade;
+
+        res.json({ msg: 'calculated', result: 1, info: ret });
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error: ${err}` });
+    }
+});
+
+router.post('/lump', async (req, res) => {
+    try {
+        let arr = req.body;
+        let ret = [];
+
+        let i;
+        for (i = 0; i < arr.length; i++) {
+            let items = await NFT.find({
+                collectionAddress: arr[i].collectionAddress.toLowerCase(),
+                tokenId: arr[i].tokenId,
+            })
+
+            if (items.length > 0)
+                ret.push(items[0]);
+        }
+
+        if (ret.length > 0) {
+            res.json({ msg: 'found', result: 1, items: ret });
+        } else {
+            res.json({ msg: 'not found', result: 0, items: [] });
+        }
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error: ${err}` });
+    }
+});
+
 router.post('/reload', async (req, res) => {
     const { collectionAddress, tokenId } = req.body;
-    await reload_nft(collectionAddress, tokenId);
+    await reload_nft(collectionAddress.toLowerCase(), tokenId);
     res.json({ result: 1 });
 });
 
 router.put('/new', async (req, res) => {
     try {
         let newItem = {
-            collectionAddress: req.body.collectionAddress,
+            collectionAddress: req.body.collectionAddress.toLowerCase(),
             tokenId: req.body.tokenId,
             URI: req.body.URI,
             totalSupply: req.body.totalSupply,
@@ -148,6 +217,9 @@ router.put('/new', async (req, res) => {
             await ret.save();
         }
 
+        await updateOwnerInfo(newItem.collectionAddress, newItem.tokenId, newItem.creator);
+        await addSubscriberItems(newItem.creator, newItem.totalSupply);
+
         res.json({ msg: 'added a new NFT', result: 1 });
     } catch (err) {
         console.log(err);
@@ -155,4 +227,130 @@ router.put('/new', async (req, res) => {
     }
 });
 
+const updateOwnerInfo = async (collectionAddress, tokenId, owner) => {
+    let ownerFindItem = {
+        collectionAddress: collectionAddress.toLowerCase(),
+        tokenId: tokenId,
+        owner: owner.toLowerCase()
+    };
+
+    let ownerItems = await Owner.find(ownerFindItem);
+
+    let balance = await getBalance(collectionAddress.toLowerCase(), tokenId, owner);
+    if (balance === undefined)
+        return;
+
+    if (ownerItems.length > 0) {
+        ownerItems[0].balance = balance;
+        await Owner.findByIdAndUpdate(ownerItems[0]._id, ownerItems[0]);
+    } else {
+        ownerFindItem.balance = balance;
+        let ret = await new Owner(ownerFindItem);
+        await ret.save();
+    }
+}
+
+const addSubscriberItems = async (user, addCount) => {
+    let ret = await Subscriber.find({
+        address: user.toLowerCase()
+    })
+
+    if (ret.length == 0) return;
+
+    let item = ret[0];
+    if (item.holders === undefined || item.holders === 0) {
+        item.holders = 1;
+    }
+
+    if (item.items === undefined || item.items === 0) {
+        item.items = addCount;
+    } else {
+        item.items += addCount;
+    }
+
+    if (item.favoriteCount === undefined) {
+        item.favoriteCount = 0;
+    }
+
+    if (item.commentCount === undefined) {
+        item.commentCount = 0;
+    }
+
+    if (item.floorPrice === undefined) {
+        item.floorPrice = 0.0;
+    }
+
+    if (item.ceilPrice === undefined) {
+        item.ceilPrice = 0.0;
+    }
+
+    if (item.volumeTrade === undefined) {
+        item.volumeTrade = 0.0;
+    }
+
+    await Subscriber.findByIdAndUpdate(item._id, item);
+}
+
+const updateHoldersItemsInfo = async (collectionAddress, tokenId, from, to, copy) => {
+    const creatorRole = await Role.find({ name: models.ROLES[1] }).limit(1);
+
+    let fromUsers = await Subscriber.find({
+        address: from.toLowerCase()
+    })
+
+    let toUsers = await Subscriber.find({
+        address: to.toLowerCase()
+    })
+
+    if (fromUsers.length > 0) {
+        let fromUser = fromUsers[0];
+        let balance = await getBalance(collectionAddress.toLowerCase(), tokenId, from);
+
+        if (fromUser.holders === undefined ) fromUser.holders = 0;
+
+        if (fromUser.roles[0].toString() === creatorRole[0]._id.toString()) {
+            if (balance === 0) {
+                fromUser.holders --;
+            }
+        }
+        fromUser.items = balance;
+        await Subscriber.findByIdAndUpdate(fromUser._id, fromUser);
+    }
+
+    if (toUsers.length > 0) {
+        let toUser = toUsers[0];
+        let balance = await getBalance(collectionAddress.toLowerCase(), tokenId, to);
+
+        if (toUser.holders === undefined ) toUser.holders = 0;
+
+        if (toUser.roles[0].toString() === creatorRole[0]._id.toString()) {
+            if (balance === copy) {
+                toUser.holders ++;
+            }
+        }
+
+        toUser.items = balance;
+        await Subscriber.findByIdAndUpdate(toUser._id, toUser);
+    }
+}
+
+const updateVolumeTrade = async (seller, copy, priceUSD) => {
+    let users = await Subscriber.find({
+        address: seller.toLowerCase()
+    })
+
+    if (users.length == 0) return;
+
+    let user = users[0];
+    if (user.volumeTrade === undefined)
+        user.volumeTrade = 0.0;
+
+    user.volumeTrade += copy * priceUSD;
+
+    await Subscriber.findByIdAndUpdate(user._id, user);
+}
+
 module.exports = router;
+module.exports.updateOwnerInfo = updateOwnerInfo;
+module.exports.updateHoldersItemsInfo = updateHoldersItemsInfo;
+module.exports.updateVolumeTrade = updateVolumeTrade;

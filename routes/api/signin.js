@@ -34,7 +34,7 @@ router.post('/', (req, res) => {
                         action: "sign-in",
                         email: item[0].email,
                         name: item[0].name,
-                        address: item[0].address,
+                        address: item[0].address.toLowerCase(),
                         role: role.name,
                         time: strNow
                     });
@@ -44,7 +44,7 @@ router.post('/', (req, res) => {
                     res.json({ msg: 'signed in', result: 1, role: role.name, info: item[0] });
                 } else {
                     var waUser = await Subscriber.find({
-                        address: signinData.address
+                        address: signinData.address.toLowerCase()
                     })
 
                     let msgText = `failed to sign in, ${item[0].name} has already signed up with ${item[0].address}`;
@@ -73,7 +73,7 @@ router.post('/', (req, res) => {
                                     action: "sign-in",
                                     email: item[0].email,
                                     name: item[0].name,
-                                    address: item[0].address,
+                                    address: item[0].address.toLowerCase(),
                                     role: role.name,
                                     time: strNow
                                 });
@@ -112,7 +112,7 @@ router.post('/profile', (req, res) => {
     Subscriber.find({
         name: profileData.name,
         password: profileData.password,
-        address: profileData.address
+        address: profileData.address.toLowerCase()
     })
         .then(async (item) => {
             if (item.length > 0) {
