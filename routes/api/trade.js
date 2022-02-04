@@ -14,6 +14,7 @@ const Subscriber = models.subscriber;
 const Trade = models.trade;
 const Owner = models.owner;
 const PaymentConversion = models.payment_conversion;
+const NFT = models.NFT;
 
 // @route PUT api/trade
 // @description trade results from users
@@ -47,7 +48,7 @@ router.post('/', async (req, res) => {
             saleExt[saleInfo[i]] = tradeReturnValues.sale[i];
         }
 
-        let methodString = parseInt(saleExt.method) === 0 ? 'fixed' : 'auction';
+        let methodString = parseInt(saleExt.method) === 0 ? 'buy' : parseInt(saleExt.method) === 1 ? 'bid': parseInt(saleExt.method) === 2 ? 'offer': 'unknown';
         let paymentId = parseInt(saleExt.payment);
 
         let paymentFound = await Payment.find({ id: paymentId });
@@ -110,6 +111,134 @@ router.post('/', async (req, res) => {
     } catch (err) {
         console.log(`${err.message}`);
         res.json({ msg: `${err.message}`, result: 0 });
+    }
+});
+
+router.get('/', async (req, res) => {
+    try {
+        if (req.query.user === undefined) {
+            let collectionAddress = req.query.collectionAddress.toLowerCase();
+            let tokenId = parseInt(req.query.tokenId);
+            let period = parseInt(req.query.period);
+
+            let curTime = new Date();
+            let curTimeStamp = curTime.getTime();
+            let startTimeStamp = curTimeStamp - period * 1000;
+            let startTime = new Date(startTimeStamp);
+
+            let minTime;
+
+            let r;
+            if (period !== 0) {
+                r = await Trade.find({
+                    collectionAddress: collectionAddress,
+                    tokenId: tokenId,
+                    when: {
+                        $gte: startTime,
+                        $lte: curTime
+                    }
+                }).select('_id when priceUSD');
+
+                minTime = startTime;
+                if (r.length > 0) {
+                    if (minTime.getTime() < r[0].when.getTime())
+                        minTime = r[0].when;
+                }
+            } else {
+                r = await Trade.find({
+                    collectionAddress: collectionAddress,
+                    tokenId: tokenId
+                }).select('_id when priceUSD');
+
+                if (r.length > 0) {
+                    minTime = r[0].when;
+                } else {
+                    minTime = curTime;
+                }
+            }
+
+            res.json({ msg: 'found', result: 1, prices: r, min: minTime.getTime() });
+        } else {
+            let userAddress = req.query.user.toLowerCase();
+            let period = parseInt(req.query.period);
+
+            let curTime = new Date();
+            let curTimeStamp = curTime.getTime();
+            let startTimeStamp = curTimeStamp - period * 1000;
+            let startTime = new Date(startTimeStamp);
+
+            let minTime;
+
+            let r;
+            if (period !== 0) {
+                r = await Trade.find({
+                    $or: [
+                        { seller: userAddress },
+                        { winner: userAddress },
+                        { creator: userAddress }
+                    ],
+                    when: {
+                        $gte: startTime,
+                        $lte: curTime
+                    }
+                }).select('_id method collectionAddress tokenId basePrice paymentName priceUSD copy seller winner when');
+
+                minTime = startTime;
+                if (r.length > 0) {
+                    if (minTime.getTime() < r[0].when.getTime())
+                        minTime = r[0].when;
+                }
+            } else {
+                r = await Trade.find({
+                    $or: [
+                        { seller: userAddress },
+                        { winner: userAddress },
+                        { creator: userAddress }
+                    ]
+                }).select('_id method collectionAddress tokenId basePrice paymentName priceUSD copy seller winner when');
+
+                if (r.length > 0) {
+                    minTime = r[0].when;
+                } else {
+                    minTime = curTime;
+                }
+            }
+
+            let tt = r.map(t => {
+                let c = JSON.parse(JSON.stringify(t));
+                c.timeAgo = getTimeGap(curTime, t.when);
+                c.cindex = t.tokenId.toString() + t.collectionAddress;
+                c.name = '';
+                return c;
+            })
+
+            let i;
+            for (i = 0; i < tt.length; i ++) {
+                if (tt[i].name === '') {
+                    let found = await NFT.find({
+                        collectionAddress: tt[i].collectionAddress,
+                        tokenId: tt[i].tokenId
+                    })
+
+                    let tname = 'unknown';
+                    if (found.length > 0) {
+                        tname = found[0].title;
+                    }
+
+                    let j;
+                    for (j = i; j < tt.length; j ++) {
+                        if (tt[j].collectionAddress === tt[i].collectionAddress && tt[j].tokenId === tt[i].tokenId) {
+                            tt[j].name = tname;
+                        }
+                    }
+                }
+            }
+
+            res.json({result: 1, history: tt, min: minTime.getTime()});
+        }
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error: ${err}`, result: 0 });
     }
 });
 

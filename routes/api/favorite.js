@@ -119,15 +119,42 @@ router.get('/', async (req, res) => {
 router.get('/count', async (req, res) => {
     try {
         const { contract, tokenId } = req.query;
-        var items = await Favorite.find({
+        let count = await Favorite.find({
             collectionAddress: contract.toLowerCase(),
             tokenId: parseInt(tokenId)
-        });
+        }).countDocuments();
 
-        res.json({ msg: 'favorite count', count: items.length });
+        res.json({ msg: 'favorite count', result: 1, count: count });
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error ${err}` });
+        res.json({ msg: `error ${err}`, result: 0 });
+    }
+});
+
+router.get('/owner', async (req, res) => {
+    try {
+        let address = req.query.address.toLowerCase();
+
+        let items = await Favorite.find({
+            address: address
+        });
+
+        let i;
+        let vv = [];
+        for (i = 0; i < items.length; i ++) {
+            let nftItems = await NFT.find({
+                collectionAddress: items[i].collectionAddress.toLowerCase(),
+                tokenId: items[i].tokenId
+            });
+
+            if (nftItems.length > 0)
+                vv.push(nftItems[0]);
+        }
+
+        res.json({ msg: 'favorite count', result: 1, items: vv });
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error ${err}`, result: 0 });
     }
 });
 

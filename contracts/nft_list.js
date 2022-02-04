@@ -250,5 +250,16 @@ const getBalance = async (collectionAddress, tokenId, address) => {
     }
 }
 
-module.exports = { explorer_nfts, reload_nft, web3, startPendingCreator, endPendingCreator, getBalance };
+const getCreator = async (collectionAddress, tokenId) => {
+    try {
+        let contract = await new web3.eth.Contract(multipleCollectionContract, collectionAddress);
+
+        let ret = await contract.methods.getCreator(tokenId).call({ from: accountAddress, chainId: chainIdNumber });
+        return ret;
+    } catch (err) {
+        console.log(err.message);
+    }
+}
+
+module.exports = { explorer_nfts, reload_nft, web3, startPendingCreator, endPendingCreator, getBalance, getCreator };
 

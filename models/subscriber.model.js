@@ -12,6 +12,7 @@ const Subscriber = mongoose.model(
         businessName: String,
         bio: String,
         notification: String,
+        role: String,
         roles: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "Role"

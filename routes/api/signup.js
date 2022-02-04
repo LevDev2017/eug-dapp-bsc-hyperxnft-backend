@@ -56,6 +56,7 @@ router.post('/', (req, res) => {
                     address_found[0].email = signupData.email;
                     address_found[0].password = signupData.password;
                     address_found[0].address = signupData.address.toLowerCase();
+                    address_found[0].role = role.name;
                     address_found[0].roles = [role._id];
 
                     await Subscriber.findByIdAndUpdate(address_found[0]._id, address_found[0]);
@@ -66,6 +67,7 @@ router.post('/', (req, res) => {
                         email: signupData.email,
                         password: signupData.password,
                         address: signupData.address.toLowerCase(),
+                        role: role.name,
                         roles: [role._id]
                     }
                     var ret = new Subscriber(newItem);
@@ -97,6 +99,10 @@ router.post('/', (req, res) => {
 
                 if (found !== undefined && found.length > 0 && item[0].roles[0] != found[0].roles[0]) {
                     item[0].roles = found[0].roles;
+                    let foundRole = await Role.findById(found[0].roles[0]);
+                    if (foundRole.length > 0)
+                        item[0].role = foundRole[0].name;
+
                     await Subscriber.findByIdAndUpdate(item[0]._id, item[0]);
                 }
                 var role = await Role.findById(item[0].roles[0]);
@@ -190,6 +196,10 @@ const permitCreator = async (creatorInfo) => {
                 });
                 if (signupUsers.length > 0) {
                     signupUsers[0].roles = items[0].roles;
+                    let foundRole = await Role.findById(items[0].roles[0]);
+                    if (foundRole.length > 0)
+                        signupUsers[0].role = foundRole[0].name;
+
                     await Subscriber.findByIdAndUpdate(signupUsers[0]._id, signupUsers[0]);
                 }
             }

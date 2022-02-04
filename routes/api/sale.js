@@ -128,7 +128,33 @@ router.get('/', async (req, res) => {
             arr[index]._doc = { ...part._doc, timespan: getTimeGap(tnow, part.when), timesec: getTimeGapSeconds(tnow, part.when) };
         });
 
-        res.json({ msg: 'ok', result: 1, fixed: fixed_items, auction: auction_items });
+        let all = [...fixed_items, ...auction_items];
+
+        res.json({ msg: 'ok', result: 1, sales: all, fixed: fixed_items, auction: auction_items });
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error ${err}`, result: 0 });
+    }
+});
+
+router.post('/count', async (req, res) => {
+    try {
+        const saleReq = req.body;
+
+        let saleItems = await Sale.find({
+            collectionAddress: saleReq.collectionAddress.toLowerCase(),
+            tokenId: saleReq.tokenId,
+            seller: saleReq.seller.toLowerCase(),
+        });
+
+        let val = 0;
+        if (saleItems.length > 0) {
+            let copies = saleItems.map(t => t.copy);
+            const reducer = (previousValue, currentValue) => previousValue + currentValue;
+            val = copies.reduce(reducer);
+        }
+
+        res.json({ msg: 'calculated', result: 1, saleCount: val });
     } catch (err) {
         console.log(err);
         res.json({ msg: `error ${err}`, result: 0 });

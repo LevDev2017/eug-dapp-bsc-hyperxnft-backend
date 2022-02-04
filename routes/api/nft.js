@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const models = require('../../models');
 const { delay } = require('../../platform/wait');
-const { reload_nft, getBalance } = require('../../contracts/nft_list');
+const { reload_nft, getBalance, getCreator } = require('../../contracts/nft_list');
 
 const NFT = models.NFT;
 const Owner = models.owner;
@@ -306,11 +306,14 @@ const updateHoldersItemsInfo = async (collectionAddress, tokenId, from, to, copy
         let fromUser = fromUsers[0];
         let balance = await getBalance(collectionAddress.toLowerCase(), tokenId, from);
 
-        if (fromUser.holders === undefined ) fromUser.holders = 0;
+        if (fromUser.holders === undefined) fromUser.holders = 1;
 
-        if (fromUser.roles[0].toString() === creatorRole[0]._id.toString()) {
-            if (balance === 0) {
-                fromUser.holders --;
+        if (balance === 0) {
+            let creatorAddress = await getCreator(collectionAddress.toLowerCase(), tokenId);
+            let creators = await Subscriber.find({ address: creatorAddress.toLowerCase() })
+            if (creators.length > 0 && creators[0].roles[0].toString() === creatorRole[0]._id.toString()) {
+                creators[0].holders --;
+                await Subscriber.findByIdAndUpdate(creators[0]._id, creators[0]);
             }
         }
         fromUser.items = balance;
@@ -321,11 +324,14 @@ const updateHoldersItemsInfo = async (collectionAddress, tokenId, from, to, copy
         let toUser = toUsers[0];
         let balance = await getBalance(collectionAddress.toLowerCase(), tokenId, to);
 
-        if (toUser.holders === undefined ) toUser.holders = 0;
+        if (toUser.holders === undefined) toUser.holders = 1;
 
-        if (toUser.roles[0].toString() === creatorRole[0]._id.toString()) {
-            if (balance === copy) {
-                toUser.holders ++;
+        if (balance === copy) {
+            let creatorAddress = await getCreator(collectionAddress.toLowerCase(), tokenId);
+            let creators = await Subscriber.find({ address: creatorAddress.toLowerCase() })
+            if (creators.length > 0 && creators[0].roles[0].toString() === creatorRole[0]._id.toString()) {
+                creators[0].holders ++;
+                await Subscriber.findByIdAndUpdate(creators[0]._id, creators[0]);
             }
         }
 

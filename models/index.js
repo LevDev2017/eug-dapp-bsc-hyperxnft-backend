@@ -19,6 +19,7 @@ db.offer = require("./offer.model");
 db.favorite = require("./favorite.model");
 db.collection = require("./collection.model");
 db.owner = require("./owner.model");
+db.category = require("./category.model");
 
 db.ROLES = ["user", "creator", "admin"];
 
