@@ -5,6 +5,7 @@ const router = express.Router();
 const models = require('../../models');
 const { getTimeGap, getTimeGapSeconds } = require('../../platform/time');
 const BigNumber = require('bignumber.js');
+const { model } = require('mongoose');
 
 const Sale = models.sale;
 const NFT = models.NFT;
@@ -105,32 +106,42 @@ router.put('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const { collectionAddress, tokenId } = req.query;
+        if (req.query.collectionAddress === undefined) {
+            let allSales = await Sale.find();
+            var tnow = new Date;
+            allSales.forEach((part, index, arr) => {
+                arr[index]._doc = { ...part._doc, timespan: getTimeGap(tnow, part.when), timesec: getTimeGapSeconds(tnow, part.when) };
+            });
 
-        var fixed_items = await Sale.find({
-            collectionAddress: collectionAddress.toLowerCase(),
-            tokenId: parseInt(tokenId),
-            method: 0
-        });
+            res.json({result: 1, sales: allSales});
+        } else {
+            const { collectionAddress, tokenId } = req.query;
 
-        var auction_items = await Sale.find({
-            collectionAddress: collectionAddress.toLowerCase(),
-            tokenId: parseInt(tokenId),
-            method: 1
-        });
+            var fixed_items = await Sale.find({
+                collectionAddress: collectionAddress.toLowerCase(),
+                tokenId: parseInt(tokenId),
+                method: 0
+            });
 
-        var tnow = new Date;
-        fixed_items.forEach((part, index, arr) => {
-            arr[index]._doc = { ...part._doc, timespan: getTimeGap(tnow, part.when), timesec: getTimeGapSeconds(tnow, part.when) };
-        });
+            var auction_items = await Sale.find({
+                collectionAddress: collectionAddress.toLowerCase(),
+                tokenId: parseInt(tokenId),
+                method: 1
+            });
 
-        auction_items.forEach((part, index, arr) => {
-            arr[index]._doc = { ...part._doc, timespan: getTimeGap(tnow, part.when), timesec: getTimeGapSeconds(tnow, part.when) };
-        });
+            var tnow = new Date;
+            fixed_items.forEach((part, index, arr) => {
+                arr[index]._doc = { ...part._doc, timespan: getTimeGap(tnow, part.when), timesec: getTimeGapSeconds(tnow, part.when) };
+            });
 
-        let all = [...fixed_items, ...auction_items];
+            auction_items.forEach((part, index, arr) => {
+                arr[index]._doc = { ...part._doc, timespan: getTimeGap(tnow, part.when), timesec: getTimeGapSeconds(tnow, part.when) };
+            });
 
-        res.json({ msg: 'ok', result: 1, sales: all, fixed: fixed_items, auction: auction_items });
+            let all = [...fixed_items, ...auction_items];
+
+            res.json({ msg: 'ok', result: 1, sales: all, fixed: fixed_items, auction: auction_items });
+        }
     } catch (err) {
         console.log(err);
         res.json({ msg: `error ${err}`, result: 0 });
@@ -192,4 +203,15 @@ const updateSubscriberPrice = async (user, price, payment) => {
     await Subscriber.findByIdAndUpdate(item._id, item);
 }
 
+const removeSale = async (saleId) => {
+    let saleFound = await Sale.find({
+        saleId: saleId
+    });
+
+    if (saleFound.length > 0) {
+        await Sale.findByIdAndRemove(saleFound[0]._id);
+    }
+}
+
 module.exports = router;
+module.exports.removeSale = removeSale;

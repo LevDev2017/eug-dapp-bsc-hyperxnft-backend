@@ -12,8 +12,11 @@ const ERC1155Tradable = require('./abi/ERC1155Tradable.json')
 const multipleCollectionContract = ERC1155Tradable.abi;
 const { addRawCollection } = require('../routes/api/collection');
 const { NFT_FACTORY_CONTRACT_ADDRESS, BUSD_CONTRACT, HYPERX_CONTRACT } = require('./address')
+// const { tradeResult } = require('../routes/api/trade')
+const { removeSale } = require('../routes/api/sale');
 
 const models = require('../models');
+
 const NFT = models.NFT;
 const Favorite = models.favorite;
 const Comment = models.comment;
@@ -136,6 +139,11 @@ const reload_nft = async (collectionAddress, tokenId) => {
 }
 
 const explorer_nfts = async () => {
+    try {
+        await bindPaymentToken();
+    } catch (err) {
+        console.log(`${err.message}`);
+    }
     return;
 
     let errString = '';
@@ -210,6 +218,8 @@ const bindPaymentToken = async () => {
     let newCnt = await contract.methods.getPaymentToken().call({ from: accountAddress });
     if (cnt.length < 3 && newCnt.length === 3) {
         console.log('payment tokens deployed', newCnt);
+    } else {
+        console.log('payment tokens already exist', newCnt);
     }
 };
 
@@ -261,5 +271,13 @@ const getCreator = async (collectionAddress, tokenId) => {
     }
 }
 
-module.exports = { explorer_nfts, reload_nft, web3, startPendingCreator, endPendingCreator, getBalance, getCreator };
+const getNewFactoryContract = async () => {
+    return new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
+}
+
+const getMsgSenderFormat = () => {
+    return { from: accountAddress, chainId: chainIdNumber }
+}
+
+module.exports = { explorer_nfts, reload_nft, web3, startPendingCreator, endPendingCreator, getBalance, getCreator, getNewFactoryContract, getMsgSenderFormat };
 

@@ -4,9 +4,11 @@ const express = require('express');
 const router = express.Router();
 const models = require('../../models');
 const BigNumber = require('bignumber.js')
-const { reload_nft } = require('../../contracts/nft_list');
 const { getTimeGap, getTimeGapSeconds } = require('../../platform/time');
 const { updateOwnerInfo, updateHoldersItemsInfo, updateVolumeTrade } = require('./nft');
+const { getNewFactoryContract, getMsgSenderFormat } = require('../../contracts/nft_list');
+const { removeBids } = require('./bid');
+const { removeSale } = require('./sale');
 
 const Sale = models.sale;
 const Payment = models.payment;
@@ -20,92 +22,11 @@ const NFT = models.NFT;
 // @description trade results from users
 // @access public
 
-const saleInfo = [
-    'creator',
-    'seller',
-    'sc',
-    'tokenId',
-    'copy',
-    'payment',
-    'basePrice',
-    'method',
-    'startTime',
-    'endTime',
-    'feeRatio',
-    'royaltyRatio'
-]
-
 router.post('/', async (req, res) => {
     try {
         const tradeReturnValues = req.body;
 
-        var dateWhen = new Date(parseInt(tradeReturnValues.timestamp) * 1000);
-        var strNow = dateWhen.toLocaleDateString();
-
-        let saleExt = {};
-        let i;
-        for (i = 0; i < saleInfo.length; i++) {
-            saleExt[saleInfo[i]] = tradeReturnValues.sale[i];
-        }
-
-        let methodString = parseInt(saleExt.method) === 0 ? 'buy' : parseInt(saleExt.method) === 1 ? 'bid': parseInt(saleExt.method) === 2 ? 'offer': 'unknown';
-        let paymentId = parseInt(saleExt.payment);
-
-        let paymentFound = await Payment.find({ id: paymentId });
-        let seller = await Subscriber.find({ address: saleExt.seller.toLowerCase() });
-        let winner = await Subscriber.find({ address: tradeReturnValues.winner.toLowerCase() });
-        let owner = await Subscriber.find({ address: tradeReturnValues.owner.toLowerCase() });
-        let creator = await Subscriber.find({ address: saleExt.creator.toLowerCase() });
-
-        let paymentConv = await PaymentConversion.find({ id: paymentId });
-        let priceUSD = 0.0;
-        if (paymentConv.length > 0 && paymentFound.length > 0) {
-            priceUSD = parseFloat(BigNumber(saleExt.basePrice).div(BigNumber(`1e${paymentFound[0].decimal}`)).times(BigNumber(paymentConv[0].ratio)).toString());
-        }
-
-        let newItem = {
-            collectionAddress: saleExt.sc.toLowerCase(),
-            tokenId: parseInt(saleExt.tokenId),
-            saleId: parseInt(tradeReturnValues.saleId),
-            copy: parseInt(saleExt.copy),
-            method: methodString,
-            payment: paymentId,
-            paymentName: paymentFound.length > 0 ? paymentFound[0].name : 'unknown',
-            basePrice: BigNumber(saleExt.basePrice).div(BigNumber(`1e${paymentFound[0].decimal}`)).toString(),
-            priceUSD: priceUSD,
-            seller: saleExt.seller.toLowerCase(),
-            sellerName: seller.length > 0 ? seller[0].name : 'unknown',
-            fee: BigNumber(tradeReturnValues.fee).div(BigNumber(`1e${paymentFound[0].decimal}`)).toString(),
-            royalty: BigNumber(tradeReturnValues.royalty).div(BigNumber(`1e${paymentFound[0].decimal}`)).toString(),
-            winner: tradeReturnValues.winner.toLowerCase(),
-            winnerName: winner.length > 0 ? winner[0].name : 'unknown',
-            payOut: BigNumber(tradeReturnValues.paySeller).div(BigNumber(`1e${paymentFound[0].decimal}`)).toString(),
-            creator: saleExt.creator.toLowerCase(),
-            creatorName: creator.length > 0 ? creator[0].name : 'unknown',
-            owner: tradeReturnValues.owner.toLowerCase(),
-            ownerName: owner.length > 0 ? owner[0].name : 'unknown',
-            when: dateWhen,
-        };
-
-        let newTrade = new Trade(newItem);
-        await newTrade.save();
-
-        await reload_nft(newItem.collectionAddress, newItem.tokenId);
-
-        let saleFound = await Sale.find({
-            saleId: newItem.saleId
-        });
-
-        if (saleFound.length > 0) {
-            await Sale.findByIdAndRemove(saleFound[0]._id);
-        }
-
-        // console.log('------------------- ', updateOwnerInfo);
-        await updateOwnerInfo(newItem.collectionAddress, newItem.tokenId, newItem.winner);
-        await updateOwnerInfo(newItem.collectionAddress, newItem.tokenId, newItem.seller);
-
-        await updateHoldersItemsInfo(newItem.collectionAddress, newItem.tokenId, newItem.seller, newItem.winner, newItem.copy);
-        await updateVolumeTrade(newItem.seller, newItem.copy, priceUSD);
+        await tradeResult(tradeReturnValues);
 
         res.json({ msg: 'ok', result: 1 });
     } catch (err) {
@@ -213,7 +134,7 @@ router.get('/', async (req, res) => {
             })
 
             let i;
-            for (i = 0; i < tt.length; i ++) {
+            for (i = 0; i < tt.length; i++) {
                 if (tt[i].name === '') {
                     let found = await NFT.find({
                         collectionAddress: tt[i].collectionAddress,
@@ -226,7 +147,7 @@ router.get('/', async (req, res) => {
                     }
 
                     let j;
-                    for (j = i; j < tt.length; j ++) {
+                    for (j = i; j < tt.length; j++) {
                         if (tt[j].collectionAddress === tt[i].collectionAddress && tt[j].tokenId === tt[i].tokenId) {
                             tt[j].name = tname;
                         }
@@ -234,7 +155,7 @@ router.get('/', async (req, res) => {
                 }
             }
 
-            res.json({result: 1, history: tt, min: minTime.getTime()});
+            res.json({ result: 1, history: tt, min: minTime.getTime() });
         }
     } catch (err) {
         console.log(err);
@@ -242,4 +163,130 @@ router.get('/', async (req, res) => {
     }
 });
 
+const tradeResult = async (tradeReturnValues) => {
+    var dateWhen = new Date(parseInt(tradeReturnValues.timestamp) * 1000);
+    var strNow = dateWhen.toLocaleDateString();
+
+    console.log('--------------------', tradeReturnValues);
+
+    let methodString = parseInt(tradeReturnValues.sale.method) === 0 ? 'buy' : parseInt(tradeReturnValues.sale.method) === 1 ? 'bid' : parseInt(tradeReturnValues.sale.method) === 2 ? 'offer' : 'unknown';
+    let paymentId = parseInt(tradeReturnValues.sale.payment);
+
+    let paymentFound = await Payment.find({ id: paymentId });
+    let seller = await Subscriber.find({ address: tradeReturnValues.sale.seller.toLowerCase() });
+    let winner = await Subscriber.find({ address: tradeReturnValues.winner.toLowerCase() });
+    let owner = await Subscriber.find({ address: tradeReturnValues.owner.toLowerCase() });
+    let creator = await Subscriber.find({ address: tradeReturnValues.sale.creator.toLowerCase() });
+
+    let paymentConv = await PaymentConversion.find({ id: paymentId });
+    let priceUSD = 0.0;
+    let basePayPrice = BigNumber(tradeReturnValues.paySeller).plus(BigNumber(tradeReturnValues.royalty)).plus(BigNumber(tradeReturnValues.devFee)).div(BigNumber(tradeReturnValues.sale.copy)).div(BigNumber(`1e${paymentFound[0].decimal}`));
+    if (paymentConv.length > 0 && paymentFound.length > 0) {
+        priceUSD = parseFloat(basePayPrice.times(BigNumber(paymentConv[0].ratio)).toString());
+    }
+
+    let newItem = {
+        collectionAddress: tradeReturnValues.sale.sc.toLowerCase(),
+        tokenId: parseInt(tradeReturnValues.sale.tokenId),
+        saleId: parseInt(tradeReturnValues.saleId),
+        copy: parseInt(tradeReturnValues.sale.copy),
+        method: methodString,
+        payment: paymentId,
+        paymentName: paymentFound.length > 0 ? paymentFound[0].name : 'unknown',
+        basePrice: basePayPrice.toString(),
+        priceUSD: priceUSD,
+        seller: tradeReturnValues.sale.seller.toLowerCase(),
+        sellerName: seller.length > 0 ? seller[0].name : 'unknown',
+        fee: BigNumber(tradeReturnValues.fee).div(BigNumber(`1e${paymentFound[0].decimal}`)).toString(),
+        royalty: BigNumber(tradeReturnValues.royalty).div(BigNumber(`1e${paymentFound[0].decimal}`)).toString(),
+        winner: tradeReturnValues.winner.toLowerCase(),
+        winnerName: winner.length > 0 ? winner[0].name : 'unknown',
+        payOut: BigNumber(tradeReturnValues.paySeller).div(BigNumber(`1e${paymentFound[0].decimal}`)).toString(),
+        creator: tradeReturnValues.sale.creator.toLowerCase(),
+        creatorName: creator.length > 0 ? creator[0].name : 'unknown',
+        owner: tradeReturnValues.owner.toLowerCase(),
+        ownerName: owner.length > 0 ? owner[0].name : 'unknown',
+        when: dateWhen,
+    };
+
+    let newTrade = new Trade(newItem);
+    await newTrade.save();
+
+    await removeSale(newItem.saleId);
+
+    // console.log('------------------- ', updateOwnerInfo);
+    await updateOwnerInfo(newItem.collectionAddress, newItem.tokenId, newItem.winner);
+    await updateOwnerInfo(newItem.collectionAddress, newItem.tokenId, newItem.seller);
+
+    await updateHoldersItemsInfo(newItem.collectionAddress, newItem.tokenId, newItem.seller, newItem.winner, newItem.copy);
+    await updateVolumeTrade(newItem.seller, newItem.copy, priceUSD);
+}
+
+
+const poll_bid = async () => {
+    let errString = '';
+
+    const poll_bid_items = async () => {
+        try {
+            let contract = await getNewFactoryContract();
+            let msgSenderInfo = await getMsgSenderFormat();
+
+            let saleCount = parseInt(await contract.methods.saleCount().call(msgSenderInfo));
+            let i;
+            let bidSales = [];
+            for (i = 0; i < saleCount; i += 100) {
+                let cc = saleCount - i;
+                if (cc > 100) {
+                    cc = 100;
+                }
+
+                let tt = await contract.methods.getSaleInfo(i, cc).call(msgSenderInfo);
+                bidSales = [...bidSales, ...tt.filter(t => parseInt(t.method) === 1)];
+            }
+
+            let nowTime = new Date().getTime() / 1000;
+            let aa = bidSales.map(t => parseInt(t.endTime) - nowTime);
+            console.log('--------------', aa);
+
+            for (i = 0; i < bidSales.length; i ++) {
+                if (parseInt(bidSales[i].endTime) < nowTime) {
+                    // console.log('>>>>>>>>>>>>>', bidSales[i]);
+                    let tx = await contract.methods.finalizeAuction(parseInt(bidSales[i].saleId)).send(msgSenderInfo);
+                    if (tx !== undefined) {
+                        // tx.events.AuctionResult?.returnValues && console.log('---------------- AuctionResult', tx.events.AuctionResult.returnValues);
+                        // tx.events.TransferNFTs?.returnValues && console.log('---------------- TransferNFTs', tx.events.TransferNFTs.returnValues);
+                        // tx.events.Trade?.returnValues && console.log('---------------- Trade', tx.events.Trade.returnValues);
+                        // tx.events.RemoveFromSale?.returnValues && console.log('---------------- Trade', tx.events.RemoveFromSale.returnValues);
+
+                        tx.events.Trade?.returnValues && await tradeResult(tx.events.Trade?.returnValues);
+                        tx.events.RemoveFromSale?.returnValues && await removeSale(parseInt(tx.events.RemoveFromSale?.returnValues.saleId));
+                        tx.events.AuctionResult?.returnValues && await removeBids(parseInt(tx.events.AuctionResult?.returnValues.saleId));
+                    }
+                }
+            }
+
+            errString = '';
+        } catch (err) {
+            let errText = err.toString();
+            if (errString != errText) {
+                errString = errText;
+                console.log("poll_bid: ", errText);
+            }
+        }
+    }
+
+    const recursive_run = () => {
+        poll_bid_items()
+            .then(() => {
+                setTimeout(recursive_run, 1000);
+            })
+            .catch(err => {
+                setTimeout(recursive_run, 1000);
+            });
+    }
+
+    recursive_run();
+}
+
 module.exports = router;
+module.exports.poll_bid = poll_bid;

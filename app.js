@@ -11,12 +11,13 @@ const user_router = require('./routes/api/user');
 const comment_router = require('./routes/api/comment');
 const nft_router = require('./routes/api/nft');
 const payment_router = require('./routes/api/payment');
-const { explorer_nfts } = require('./contracts/nft_list');
 const price_scan = require('./contracts/price_scan');
 const sale_router = require('./routes/api/sale');
 const trade_router = require('./routes/api/trade');
+const { poll_bid } = require('./routes/api/trade');
 const offer_router = require('./routes/api/offer');
 const favorite_router = require('./routes/api/favorite');
+const bid_router = require('./routes/api/bid');
 const { collection_router } = require('./routes/api/collection');
 const contract_router = require('./routes/api/contract');
 
@@ -48,11 +49,12 @@ app.use('/api/offer', offer_router);
 app.use('/api/favorite', favorite_router);
 app.use('/api/collection', collection_router);
 app.use('/api/contract', contract_router);
+app.use('/api/bid', bid_router);
 
 const port = process.env.PORT || 8082;
 
-explorer_nfts();
 price_scan();
+poll_bid();
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
 
