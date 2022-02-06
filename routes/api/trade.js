@@ -163,11 +163,34 @@ router.get('/', async (req, res) => {
     }
 });
 
+const saleLabel = [
+    'saleId',
+    'creator',
+    'seller',
+    'sc',
+    'tokenId',
+    'copy',
+    'payment',
+    'basePrice',
+    'method',
+    'startTime',
+    'endTime',
+    'feeRatio',
+    'royaltyRatio'
+]
+
 const tradeResult = async (tradeReturnValues) => {
     var dateWhen = new Date(parseInt(tradeReturnValues.timestamp) * 1000);
     var strNow = dateWhen.toLocaleDateString();
 
-    console.log('--------------------', tradeReturnValues);
+    if (tradeReturnValues.sale[saleLabel[0]] === undefined) {
+        let i;
+        for (i = 0; i < saleLabel.length; i ++) {
+            tradeReturnValues.sale[saleLabel[i]] = tradeReturnValues.sale[i];
+        }
+    }
+
+    // console.log('--------------------', tradeReturnValues);
 
     let methodString = parseInt(tradeReturnValues.sale.method) === 0 ? 'buy' : parseInt(tradeReturnValues.sale.method) === 1 ? 'bid' : parseInt(tradeReturnValues.sale.method) === 2 ? 'offer' : 'unknown';
     let paymentId = parseInt(tradeReturnValues.sale.payment);
@@ -248,7 +271,7 @@ const poll_bid = async () => {
             let aa = bidSales.map(t => parseInt(t.endTime) - nowTime);
             console.log('--------------', aa);
 
-            for (i = 0; i < bidSales.length; i ++) {
+            for (i = 0; i < bidSales.length; i++) {
                 if (parseInt(bidSales[i].endTime) < nowTime) {
                     // console.log('>>>>>>>>>>>>>', bidSales[i]);
                     let tx = await contract.methods.finalizeAuction(parseInt(bidSales[i].saleId)).send(msgSenderInfo);
