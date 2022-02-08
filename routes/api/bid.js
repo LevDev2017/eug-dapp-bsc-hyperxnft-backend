@@ -68,7 +68,7 @@ router.get('/', async (req, res) => {
         }
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}`, result: 0 });
+        res.json({ msg: `error: ${err.message}`, result: 0 });
     }
 });
 

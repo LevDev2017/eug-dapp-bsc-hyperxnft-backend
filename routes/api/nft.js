@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const models = require('../../models');
 const { delay } = require('../../platform/wait');
-const { getBalance, getCreator } = require('../../contracts/nft_list');
+const { getBalance, getCreator, getHolderCount } = require('../../contracts/nft_list');
 
 const NFT = models.NFT;
 const Owner = models.owner;
@@ -90,7 +90,7 @@ router.get('/', async (req, res) => {
         }
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}` });
+        res.json({ msg: `error: ${err.message}`, result: 0 });
     }
 });
 
@@ -107,24 +107,52 @@ router.get('/:address/:id', async (req, res) => {
         }
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}` });
+        res.json({ msg: `error: ${err.message}`, result: 0 });
     }
 });
 
 router.get('/owner', async (req, res) => {
     try {
-        var items = await Owner.find({
-            owner: req.query.address.toLowerCase(),
-            balance: { $gt: 0 },
-        })
+        let items = [];
+        if (req.query.validBalance !== undefined) {
+            items = await Owner.find({
+                owner: req.query.address.toLowerCase(),
+                balance: { $gt: 0 },
+            })
+        } else if (req.query.collectionAddress !== undefined) {
+            items = await Owner.find({
+                collectionAddress: req.query.collectionAddress.toLowerCase(),
+                tokenId: parseInt(req.query.tokenId)
+            })
+        } else {
+            items = await Owner.find({
+                owner: req.query.address.toLowerCase()
+            })
+        }
+
+        let i;
+        let retArray = [];
+
+        for (i = 0; i < items.length; i ++) {
+            let subscribers = await Subscriber.find({
+                address: items[i].owner.toLowerCase()
+            })
+
+            if (subscribers.length > 0) {
+                retArray.push({
+                    ...items[i]._doc,
+                    ...subscribers[0]._doc
+                })
+            }
+        }
         if (items.length > 0) {
-            res.json({ msg: 'found', result: 1, items: items });
+            res.json({ msg: 'found', result: 1, items: retArray });
         } else {
             res.json({ msg: 'not found', result: 0 });
         }
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}` });
+        res.json({ msg: `error: ${err.message}`, result: 0 });
     }
 });
 
@@ -151,7 +179,7 @@ router.post('/lump', async (req, res) => {
         }
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}` });
+        res.json({ msg: `error: ${err.message}`, result: 0 });
     }
 });
 
@@ -201,7 +229,7 @@ router.put('/new', async (req, res) => {
         res.json({ msg: 'added a new NFT', result: 1 });
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}`, result: 0 });
+        res.json({ msg: `error: ${err.message}`, result: 0 });
     }
 });
 
@@ -225,6 +253,24 @@ const updateOwnerInfo = async (collectionAddress, tokenId, owner) => {
         ownerFindItem.balance = balance;
         let ret = await new Owner(ownerFindItem);
         await ret.save();
+    }
+}
+
+const updateHolderCount = async (collectionAddress, tokenId) => {
+    let nftFindItem = {
+        collectionAddress: collectionAddress.toLowerCase(),
+        tokenId: tokenId
+    };
+
+    let nftItems = await NFT.find(nftFindItem);
+
+    let holders = await getHolderCount(collectionAddress.toLowerCase(), tokenId);
+    if (holders === undefined)
+        return;
+
+    if (nftItems.length > 0) {
+        nftItems[0].holderCount = holders;
+        await NFT.findByIdAndUpdate(nftItems[0]._id, nftItems[0]);
     }
 }
 
@@ -338,3 +384,4 @@ module.exports = router;
 module.exports.updateOwnerInfo = updateOwnerInfo;
 module.exports.updateHoldersItemsInfo = updateHoldersItemsInfo;
 module.exports.updateVolumeTrade = updateVolumeTrade;
+module.exports.updateHolderCount = updateHolderCount;

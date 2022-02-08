@@ -54,7 +54,7 @@ router.get('/statistics', async (req, res) => {
         res.json({ msg: 'calculated', result: 1, info: ret });
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}` });
+        res.json({ msg: `error: ${err.message}`, result: 0 });
     }
 });
 

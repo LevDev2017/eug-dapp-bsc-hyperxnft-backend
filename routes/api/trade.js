@@ -5,7 +5,7 @@ const router = express.Router();
 const models = require('../../models');
 const BigNumber = require('bignumber.js')
 const { getTimeGap, getTimeGapSeconds } = require('../../platform/time');
-const { updateOwnerInfo, updateHoldersItemsInfo, updateVolumeTrade } = require('./nft');
+const { updateOwnerInfo, updateHoldersItemsInfo, updateVolumeTrade, updateHolderCount } = require('./nft');
 const { getNewFactoryContract, getMsgSenderFormat } = require('../../contracts/nft_list');
 const { removeBids } = require('./bid');
 const { removeSale } = require('./sale');
@@ -159,7 +159,7 @@ router.get('/', async (req, res) => {
         }
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}`, result: 0 });
+        res.json({ msg: `error: ${err.message}`, result: 0 });
     }
 });
 
@@ -241,6 +241,8 @@ const tradeResult = async (tradeReturnValues) => {
     await updateOwnerInfo(newItem.collectionAddress, newItem.tokenId, newItem.winner);
     await updateOwnerInfo(newItem.collectionAddress, newItem.tokenId, newItem.seller);
 
+    await updateHolderCount(newItem.collectionAddress, newItem.tokenId);
+
     await updateHoldersItemsInfo(newItem.collectionAddress, newItem.tokenId, newItem.seller, newItem.winner, newItem.copy);
     await updateVolumeTrade(newItem.seller, newItem.copy, priceUSD);
 }
@@ -252,7 +254,10 @@ const poll_bid = async () => {
     const poll_bid_items = async () => {
         try {
             let contract = await getNewFactoryContract();
-            let msgSenderInfo = await getMsgSenderFormat();
+            let msgSenderInfo = getMsgSenderFormat();
+
+            if (msgSenderInfo === undefined)
+                return;
 
             let saleCount = parseInt(await contract.methods.saleCount().call(msgSenderInfo));
             let i;

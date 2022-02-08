@@ -3,16 +3,20 @@ const mongoose = require("mongoose");
 const Offer = mongoose.model(
     "Offer",
     new mongoose.Schema({
-        contract: String,
+        saleId: Number,
+        collectionAddress: String,
         tokenId: Number,
-        quantity: Number,
+        seller: String,
+        sellerName: String,
+        copy: Number,
+        price: Number,
+        priceUSD: Number,
         payment: Number,
-        price: String,
-        days: String,
-        hhmm: String,
+        paymentName: String,
         start: Date,
-        name: String,
-        address: String
+        duration: Number,
+        address: String,
+        name: String
     })
 );
 

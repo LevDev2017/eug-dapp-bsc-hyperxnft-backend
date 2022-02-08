@@ -139,11 +139,6 @@ const reload_nft = async (collectionAddress, tokenId) => {
 }
 
 const explorer_nfts = async () => {
-    try {
-        await bindPaymentToken();
-    } catch (err) {
-        console.log(`${err.message}`);
-    }
     return;
 
     let errString = '';
@@ -260,6 +255,17 @@ const getBalance = async (collectionAddress, tokenId, address) => {
     }
 }
 
+const getHolderCount = async (collectionAddress, tokenId) => {
+    try {
+        let contract = await new web3.eth.Contract(multipleCollectionContract, collectionAddress);
+
+        let ret = await contract.methods.holders(tokenId).call({ from: accountAddress, chainId: chainIdNumber });
+        return parseInt(ret);
+    } catch (err) {
+        console.log(err.message);
+    }
+}
+
 const getCreator = async (collectionAddress, tokenId) => {
     try {
         let contract = await new web3.eth.Contract(multipleCollectionContract, collectionAddress);
@@ -276,8 +282,18 @@ const getNewFactoryContract = async () => {
 }
 
 const getMsgSenderFormat = () => {
-    return { from: accountAddress, chainId: chainIdNumber }
+    if (accountAddress !== '') {
+        return { from: accountAddress, chainId: chainIdNumber }
+    }
 }
 
-module.exports = { explorer_nfts, reload_nft, web3, startPendingCreator, endPendingCreator, getBalance, getCreator, getNewFactoryContract, getMsgSenderFormat };
+const syncPaymentToken = async () => {
+    try {
+        await bindPaymentToken();
+    } catch (err) {
+        console.log(`${err.message}`);
+    }
+}
+
+module.exports = { explorer_nfts, reload_nft, web3, startPendingCreator, endPendingCreator, getBalance, getCreator, getNewFactoryContract, getMsgSenderFormat, getHolderCount, syncPaymentToken };
 

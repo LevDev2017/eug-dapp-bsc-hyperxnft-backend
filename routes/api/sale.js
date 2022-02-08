@@ -10,6 +10,7 @@ const { model } = require('mongoose');
 const Sale = models.sale;
 const NFT = models.NFT;
 const Subscriber = models.subscriber;
+const Owner = models.owner;
 const PaymentConversion = models.payment_conversion;
 
 // @route PUT api/sale
@@ -100,21 +101,87 @@ router.put('/', async (req, res) => {
         }
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}`, result: 0 });
+        res.json({ msg: `error: ${err.message}`, result: 0 });
     }
 });
 
 router.get('/', async (req, res) => {
     try {
-        if (req.query.collectionAddress === undefined) {
-            let allSales = await Sale.find();
+        if (req.query.unlisted !== undefined) {
+            let allSales = [];
+            if (req.query.collectionAddress !== undefined) {
+                allSales = await Sale.find({
+                    collectionAddress: req.query.collectionAddress.toLowerCase(),
+                    tokenId: parseInt(req.query.tokenId)
+                });
+            } else {
+                allSales = await Sale.find();
+            }
             var tnow = new Date;
             allSales.forEach((part, index, arr) => {
                 arr[index]._doc = { ...part._doc, timespan: getTimeGap(tnow, part.when), timesec: getTimeGapSeconds(tnow, part.when) };
             });
 
-            res.json({result: 1, sales: allSales});
-        } else {
+            let allNFTs = [];
+            if (req.query.collectionAddress !== undefined) {
+                allNFTs = await NFT.find({
+                    collectionAddress: req.query.collectionAddress.toLowerCase(),
+                    tokenId: parseInt(req.query.tokenId)
+                });
+            } else {
+                allNFTs = await NFT.find();
+            }
+
+            let i;
+            let unlistedSales = [];
+
+            let owners = await Owner.find();
+
+            for (i = 0; i < allNFTs.length; i++) {
+                // each NFT item
+
+                // all sales for this NFT
+                let salesFiltered = allSales.filter(t => t.collectionAddress === allNFTs[i].collectionAddress && t.tokenId === allNFTs[i].tokenId);
+                let sum = 0; // sum of sale copies of this NFT
+                if (salesFiltered.length > 0) {
+                    sum = salesFiltered.map(t => t.copy).reduce((a, b) => a + b);
+                }
+
+                // all owners of this NFT
+                let ownerFiltered = owners.filter(o => o.collectionAddress === allNFTs[i].collectionAddress && o.tokenId === allNFTs[i].tokenId);
+
+                let j;
+                let ownerInfo = [];
+                for (j = 0; j < ownerFiltered.length; j++) {
+                    // each owner of this NFT
+
+                    // sales of this owner
+                    let ownerSale = salesFiltered.filter(t => t.seller === ownerFiltered[j].owner);
+                    let ownerSaleSum = 0;// sale count of this owner for this NFT
+                    if (ownerSale.length > 0)
+                        ownerSaleSum = ownerSale.map(o => o.copy).reduce((a, b) => a + b);
+
+                    if (ownerFiltered[j].balance > ownerSaleSum) {
+                        ownerInfo.push({
+                            owner: ownerFiltered[j].owner,
+                            balanceLeft: ownerFiltered[j].balance - ownerSaleSum
+                        })
+                    }
+                }
+
+                if (allNFTs[i].totalSupply > sum) {
+                    unlistedSales.push({
+                        collectionAddress: allNFTs[i].collectionAddress.toLowerCase(),
+                        tokenId: allNFTs[i].tokenId,
+                        copy: allNFTs[i].totalSupply - sum,
+                        method: 2,
+                        owners: ownerInfo || []
+                    });
+                }
+            }
+
+            res.json({ result: 1, sales: unlistedSales });
+        } else if (req.query.collectionAddress !== undefined) {
             const { collectionAddress, tokenId } = req.query;
 
             var fixed_items = await Sale.find({
@@ -141,6 +208,14 @@ router.get('/', async (req, res) => {
             let all = [...fixed_items, ...auction_items];
 
             res.json({ msg: 'ok', result: 1, sales: all, fixed: fixed_items, auction: auction_items });
+        } else {
+            let allSales = await Sale.find();
+            var tnow = new Date;
+            allSales.forEach((part, index, arr) => {
+                arr[index]._doc = { ...part._doc, timespan: getTimeGap(tnow, part.when), timesec: getTimeGapSeconds(tnow, part.when) };
+            });
+
+            res.json({ result: 1, sales: allSales });
         }
     } catch (err) {
         console.log(err);
@@ -166,6 +241,21 @@ router.post('/count', async (req, res) => {
         }
 
         res.json({ msg: 'calculated', result: 1, saleCount: val });
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error ${err}`, result: 0 });
+    }
+});
+
+router.post('/remove', async (req, res) => {
+    try {
+        const saleRemoveReq = req.body;
+
+        await Sale.deleteMany({
+            saleId: parseInt(saleRemoveReq.saleId)
+        });
+
+        res.json({ msg: 'successfully removed', result: 1});
     } catch (err) {
         console.log(err);
         res.json({ msg: `error ${err}`, result: 0 });

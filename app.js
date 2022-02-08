@@ -15,11 +15,15 @@ const price_scan = require('./contracts/price_scan');
 const sale_router = require('./routes/api/sale');
 const trade_router = require('./routes/api/trade');
 const { poll_bid } = require('./routes/api/trade');
+const { syncPaymentToken } = require('./contracts/nft_list');
 const offer_router = require('./routes/api/offer');
 const favorite_router = require('./routes/api/favorite');
 const bid_router = require('./routes/api/bid');
+const creator_router = require('./routes/api/creator');
 const { collection_router } = require('./routes/api/collection');
 const contract_router = require('./routes/api/contract');
+const nft_category_router = require('./routes/api/nft_category');
+const {addDefaultNFTCategories} = require('./routes/api/nft_category');
 
 const app = express();
 
@@ -50,11 +54,15 @@ app.use('/api/favorite', favorite_router);
 app.use('/api/collection', collection_router);
 app.use('/api/contract', contract_router);
 app.use('/api/bid', bid_router);
+app.use('/api/creator', creator_router);
+app.use('/api/nft_category', nft_category_router);
 
 const port = process.env.PORT || 8082;
 
 price_scan();
 poll_bid();
+syncPaymentToken();
+addDefaultNFTCategories();
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
 

@@ -5,7 +5,6 @@ const router = express.Router();
 const models = require('../../models');
 
 const Offer = models.offer;
-const NFT = models.NFT;
 
 // @route PUT api/offer
 // @description offer prodecure from users
@@ -13,49 +12,47 @@ const NFT = models.NFT;
 
 router.put('/', async (req, res) => {
     try {
-        const {
-            contract: contract,
-            tokenId: tokenId,
-            quantity: quantity,
-            payment: payment,
-            price: price,
-            days: days,
-            hhmm: hhmm,
-            name: name,
-            address: addr
-        } = req.body;
-
-        const items = await NFT.find({
-            contract: contract.toLowerCase(),
-            tokenId: tokenId
-        });
-
-        if (items.length === 0) {
-            res.json({ msg: 'no nft item found' });
-        } else if (items[0].onSale !== true) {
-            res.json({ msg: 'The nft item is not allowed to be on sale' });
-        } else {
-            let newOffer = new Offer({
-                contract: contract.toLowerCase(),
-                tokenId: tokenId,
-                quantity: quantity,
-                payment: payment,
-                price: price,
-                days: days,
-                hhmm: hhmm,
-                start: new Date(),
-                name: name,
-                address: addr.toLowerCase()
-            });
-
-            await newOffer.save();
-
-            res.json({ msg: 'put on offer', res: newOffer });
+        let newOffer = {
+            saleId: req.body.saleId,
+            collectionAddress: req.body.collectionAddress,
+            tokenId: req.body.tokenId,
+            seller: req.body.seller.toLowerCase(),
+            sellerName: req.body.sellerName,
+            copy: req.body.copy,
+            price: req.body.price,
+            priceUSD: req.body.priceUSD,
+            payment: req.body.payment,
+            paymentName: req.body.paymentName,
+            start: new Date(),
+            duration: req.body.duration,
+            address: req.body.address.toLowerCase(),
+            name: req.body.name
         }
+
+        let ret = await new Offer(newOffer);
+        await ret.save();
+
+        res.json({ msg: 'Sync to server', result: 1 });
     } catch (err) {
         console.log(err);
-        res.json({ msg: `error: ${err}` });
+        res.json({ msg: `error: ${err.message}` , result: 0});
     }
 });
+
+router.get('/', async (req, res) => {
+    try {
+        if (req.query.collectionAddress !== undefined) {
+            let tt = await Offer.find({
+                collectionAddress: req.query.collectionAddress.toLowerCase(),
+                tokenId: parseInt(req.query.tokenId)
+            })
+
+            res.json({msg: 'found', result: 1, offers: tt});
+        }
+    } catch (err) {
+        console.log(`${err.message}`);
+        res.json({msg: err.message, result: 0});
+    }
+})
 
 module.exports = router;

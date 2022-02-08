@@ -21,6 +21,7 @@ db.collection = require("./collection.model");
 db.owner = require("./owner.model");
 db.category = require("./category.model");
 db.bid = require("./bid.model");
+db.NFT_category = require("./nft_category.model");
 
 db.ROLES = ["user", "creator", "admin"];
 
