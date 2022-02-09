@@ -215,7 +215,13 @@ router.get('/', async (req, res) => {
                 arr[index]._doc = { ...part._doc, timespan: getTimeGap(tnow, part.when), timesec: getTimeGapSeconds(tnow, part.when) };
             });
 
-            res.json({ result: 1, sales: allSales });
+            let tt = allSales;
+            // let i;
+            // for (i = 0; i < 100; i ++) {
+            //     tt = [...tt, ...allSales]
+            // }
+
+            res.json({ result: 1, sales: tt });
         }
     } catch (err) {
         console.log(err);

@@ -5,7 +5,7 @@ const router = express.Router();
 const models = require('../../models');
 const BigNumber = require('bignumber.js')
 const { getTimeGap, getTimeGapSeconds } = require('../../platform/time');
-const { updateOwnerInfo, updateHoldersItemsInfo, updateVolumeTrade, updateHolderCount } = require('./nft');
+const { updateOwnerInfo, updateHoldersItemsInfo, updateVolumeTrade, updateHolderCount, updateNFTTradeInfo } = require('./nft');
 const { getNewFactoryContract, getMsgSenderFormat } = require('../../contracts/nft_list');
 const { removeBids } = require('./bid');
 const { removeSale } = require('./sale');
@@ -37,49 +37,7 @@ router.post('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        if (req.query.user === undefined) {
-            let collectionAddress = req.query.collectionAddress.toLowerCase();
-            let tokenId = parseInt(req.query.tokenId);
-            let period = parseInt(req.query.period);
-
-            let curTime = new Date();
-            let curTimeStamp = curTime.getTime();
-            let startTimeStamp = curTimeStamp - period * 1000;
-            let startTime = new Date(startTimeStamp);
-
-            let minTime;
-
-            let r;
-            if (period !== 0) {
-                r = await Trade.find({
-                    collectionAddress: collectionAddress,
-                    tokenId: tokenId,
-                    when: {
-                        $gte: startTime,
-                        $lte: curTime
-                    }
-                }).select('_id when priceUSD');
-
-                minTime = startTime;
-                if (r.length > 0) {
-                    if (minTime.getTime() < r[0].when.getTime())
-                        minTime = r[0].when;
-                }
-            } else {
-                r = await Trade.find({
-                    collectionAddress: collectionAddress,
-                    tokenId: tokenId
-                }).select('_id when priceUSD');
-
-                if (r.length > 0) {
-                    minTime = r[0].when;
-                } else {
-                    minTime = curTime;
-                }
-            }
-
-            res.json({ msg: 'found', result: 1, prices: r, min: minTime.getTime() });
-        } else {
+        if (req.query.user !== undefined) {
             let userAddress = req.query.user.toLowerCase();
             let period = parseInt(req.query.period);
 
@@ -156,6 +114,48 @@ router.get('/', async (req, res) => {
             }
 
             res.json({ result: 1, history: tt, min: minTime.getTime() });
+        } else if (req.query.collectionAddress !== undefined) {
+            let collectionAddress = req.query.collectionAddress.toLowerCase();
+            let tokenId = parseInt(req.query.tokenId);
+            let period = parseInt(req.query.period);
+
+            let curTime = new Date();
+            let curTimeStamp = curTime.getTime();
+            let startTimeStamp = curTimeStamp - period * 1000;
+            let startTime = new Date(startTimeStamp);
+
+            let minTime;
+
+            let r;
+            if (period !== 0) {
+                r = await Trade.find({
+                    collectionAddress: collectionAddress,
+                    tokenId: tokenId,
+                    when: {
+                        $gte: startTime,
+                        $lte: curTime
+                    }
+                }).select('_id when priceUSD');
+
+                minTime = startTime;
+                if (r.length > 0) {
+                    if (minTime.getTime() < r[0].when.getTime())
+                        minTime = r[0].when;
+                }
+            } else {
+                r = await Trade.find({
+                    collectionAddress: collectionAddress,
+                    tokenId: tokenId
+                }).select('_id when priceUSD');
+
+                if (r.length > 0) {
+                    minTime = r[0].when;
+                } else {
+                    minTime = curTime;
+                }
+            }
+
+            res.json({ msg: 'found', result: 1, prices: r, min: minTime.getTime() });
         }
     } catch (err) {
         console.log(err);
@@ -245,8 +245,9 @@ const tradeResult = async (tradeReturnValues) => {
 
     await updateHoldersItemsInfo(newItem.collectionAddress, newItem.tokenId, newItem.seller, newItem.winner, newItem.copy);
     await updateVolumeTrade(newItem.seller, newItem.copy, priceUSD);
-}
 
+    await updateNFTTradeInfo(newItem.collectionAddress, newItem.tokenId, priceUSD);
+}
 
 const poll_bid = async () => {
     let errString = '';

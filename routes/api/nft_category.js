@@ -24,6 +24,10 @@ router.get('/', async (req, res) => {
             }
 
             res.json({ msg: 'found', result: 1, categories: creatorCategories });
+        } else if (req.query.all !== undefined) {
+            let creatorCategories = await NFTCategory.find()
+
+            res.json({ msg: 'found', result: 1, categories: creatorCategories });
         }
     } catch (err) {
         console.log(`${err.message}`);

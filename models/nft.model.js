@@ -12,14 +12,21 @@ const NFT = mongoose.model(
         image: String,
         video: Boolean,
         title: String,
-        category: String,
+        category0: String,
+        category1: String,
+        category2: String,
+        category3: String,
+        category4: String,
         description: String,
         attributes: String,
         tags: String,
         priceUSD: Number,
         favoriteCount: Number,
         commentCount: Number,
-        timestamp: Date
+        timestamp: Date,
+        lastSoldPriceUSD: Number,
+        lastSoldTime: Date,
+        visited: Number
     })
 );
 

@@ -24,6 +24,8 @@ const Subscriber = mongoose.model(
         items: Number,
         favoriteCount: Number,
         commentCount: Number,
+        lastSoldPriceUSD: Number,
+        lastSoldTime: Date,
     })
 );
 

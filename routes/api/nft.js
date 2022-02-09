@@ -189,6 +189,24 @@ router.post('/reload', async (req, res) => {
     res.json({ result: 1 });
 });
 
+router.post('/visit', async (req, res) => {
+    const { collectionAddress, tokenId } = req.body;
+
+    let nfts = await NFT.find({
+        collectionAddress: collectionAddress.toLowerCase(),
+        tokenId: parseInt(tokenId)
+    })
+
+    if (nfts.length > 0) {
+        let nft = nfts[0];
+        if (nft.visited === undefined) nft.visited = 1;
+        else nft.visited ++;
+
+        await NFT.findByIdAndUpdate(nft._id, nft);
+    }
+    res.json({ result: 1 });
+});
+
 router.put('/new', async (req, res) => {
     try {
         let newItem = {
@@ -201,14 +219,21 @@ router.put('/new', async (req, res) => {
             image: req.body.image,
             video: req.body.video,
             title: req.body.title,
-            category: req.body.category,
+            category0: req.body.category0,
+            category1: req.body.category1,
+            category2: req.body.category2,
+            category3: req.body.category3,
+            category4: req.body.category4,
             description: req.body.description,
             attributes: req.body.attributes,
             tags: req.body.tags,
             priceUSD: 0,
             favoriteCount: 0,
             commentCount: 0,
-            timestamp: new Date()
+            timestamp: new Date(),
+            lastSoldPriceUSD: 0.0,
+            lastSoldTime: new Date(),
+            visited: 0
         };
 
         var items = await NFT.find({
@@ -377,7 +402,25 @@ const updateVolumeTrade = async (seller, copy, priceUSD) => {
 
     user.volumeTrade += copy * priceUSD;
 
+    user.lastSoldPriceUSD = priceUSD;
+    user.lastSoldTime = new Date();
+
     await Subscriber.findByIdAndUpdate(user._id, user);
+}
+
+const updateNFTTradeInfo = async (collectionAddress, tokenId, priceUSD) => {
+    let nfts = await NFT.find({
+        collectionAddress: collectionAddress.toLowerCase(),
+        tokenId: tokenId
+    })
+
+    if (nfts.length == 0) return;
+
+    let nft = nfts[0];
+    nft.lastSoldPriceUSD = priceUSD;
+    nft.lastSoldTime = new Date();
+
+    await NFT.findByIdAndUpdate(nft._id, nft);
 }
 
 module.exports = router;
@@ -385,3 +428,4 @@ module.exports.updateOwnerInfo = updateOwnerInfo;
 module.exports.updateHoldersItemsInfo = updateHoldersItemsInfo;
 module.exports.updateVolumeTrade = updateVolumeTrade;
 module.exports.updateHolderCount = updateHolderCount;
+module.exports.updateNFTTradeInfo = updateNFTTradeInfo;
