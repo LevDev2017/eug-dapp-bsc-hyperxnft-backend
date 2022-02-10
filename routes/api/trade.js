@@ -156,6 +156,14 @@ router.get('/', async (req, res) => {
             }
 
             res.json({ msg: 'found', result: 1, prices: r, min: minTime.getTime() });
+        } else if (req.query.all !== undefined) {
+            let r = await Trade.find();
+            let rr = r;
+            // let i;
+            // for (i = 0; i < 1000; i ++) {
+            //     rr = [...rr, ...r];
+            // }
+            res.json({result: 1, history: rr});
         }
     } catch (err) {
         console.log(err);
@@ -275,7 +283,7 @@ const poll_bid = async () => {
 
             let nowTime = new Date().getTime() / 1000;
             let aa = bidSales.map(t => parseInt(t.endTime) - nowTime);
-            console.log('--------------', aa);
+            // console.log('--------------', aa);
 
             for (i = 0; i < bidSales.length; i++) {
                 if (parseInt(bidSales[i].endTime) < nowTime) {

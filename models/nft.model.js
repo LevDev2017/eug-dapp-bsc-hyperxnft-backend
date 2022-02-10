@@ -8,6 +8,7 @@ const NFT = mongoose.model(
         URI: String,
         totalSupply: Number,
         creator: String,
+        creatorName: String,
         holderCount: Number,
         image: String,
         video: Boolean,

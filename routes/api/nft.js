@@ -209,12 +209,16 @@ router.post('/visit', async (req, res) => {
 
 router.put('/new', async (req, res) => {
     try {
+        let user = await Subscriber.find({
+            address: req.body.creator.toLowerCase(),
+        })
         let newItem = {
             collectionAddress: req.body.collectionAddress.toLowerCase(),
             tokenId: req.body.tokenId,
             URI: req.body.URI,
             totalSupply: req.body.totalSupply,
             creator: req.body.creator,
+            creatorName: user.length > 0? user[0].name: '',
             holderCount: req.body.holderCount,
             image: req.body.image,
             video: req.body.video,
