@@ -24,6 +24,7 @@ const { collection_router } = require('./routes/api/collection');
 const contract_router = require('./routes/api/contract');
 const nft_category_router = require('./routes/api/nft_category');
 const {addDefaultNFTCategories} = require('./routes/api/nft_category');
+const notification_router = require('./routes/api/notification');
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use('/api/contract', contract_router);
 app.use('/api/bid', bid_router);
 app.use('/api/creator', creator_router);
 app.use('/api/nft_category', nft_category_router);
+app.use('/api/notification', notification_router);
 
 const port = process.env.PORT || 8082;
 

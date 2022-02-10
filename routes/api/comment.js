@@ -4,6 +4,7 @@ const express = require('express');
 const { getTimeGap } = require('../../platform/time');
 const router = express.Router();
 const models = require('../../models');
+const { putNotification } = require('./notification')
 
 const Comment = models.comment;
 const Favorite = models.favorite;
@@ -65,6 +66,8 @@ router.post('/', async (req, res) => {
         user.commentCount ++;
         await Subscriber.findByIdAndUpdate(user._id, user);
     }
+
+    await putNotification(newHistory.address, nftItems[0].creator, ` has commented your NFT`)
 
     res.json({msg: 'ok', result: 1});
 });

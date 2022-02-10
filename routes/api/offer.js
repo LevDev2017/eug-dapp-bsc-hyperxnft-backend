@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const models = require('../../models');
+const { putNotification } = require('./notification')
 
 const Offer = models.offer;
 
@@ -31,6 +32,8 @@ router.put('/', async (req, res) => {
 
         let ret = await new Offer(newOffer);
         await ret.save();
+
+        await putNotification(newOffer.address, newOffer.seller, ` removed his/her favorite from your NFT`)
 
         res.json({ msg: 'Sync to server', result: 1 });
     } catch (err) {

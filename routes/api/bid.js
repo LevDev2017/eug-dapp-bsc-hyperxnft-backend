@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const models = require('../../models');
+const { putNotification } = require('./notification')
 const BigNumber = require('bignumber.js')
 
 const Sale = models.sale;
@@ -12,6 +13,7 @@ const Bid = models.bid;
 const Owner = models.owner;
 const PaymentConversion = models.payment_conversion;
 const NFT = models.NFT;
+
 
 // @route PUT api/bid
 // @description bid results from users
@@ -42,6 +44,8 @@ router.post('/', async (req, res) => {
 
         let ret = await new Bid(newItem);
         await ret.save();
+
+        await putNotification(newItem.bidder, newItem.seller, ` placed a bid on your sale`)
 
         res.json({ msg: 'Sync to server', result: 1 });
     } catch (err) {

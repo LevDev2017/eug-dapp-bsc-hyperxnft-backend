@@ -9,6 +9,7 @@ const { updateOwnerInfo, updateHoldersItemsInfo, updateVolumeTrade, updateHolder
 const { getNewFactoryContract, getMsgSenderFormat } = require('../../contracts/nft_list');
 const { removeBids } = require('./bid');
 const { removeSale } = require('./sale');
+const { putNotification } = require('./notification')
 
 const Sale = models.sale;
 const Payment = models.payment;
@@ -255,6 +256,8 @@ const tradeResult = async (tradeReturnValues) => {
     await updateVolumeTrade(newItem.seller, newItem.copy, priceUSD);
 
     await updateNFTTradeInfo(newItem.collectionAddress, newItem.tokenId, priceUSD);
+
+    await putNotification(newItem.winner, newItem.seller, ` has purchased your NFT (${newItem.method})`)
 }
 
 const poll_bid = async () => {

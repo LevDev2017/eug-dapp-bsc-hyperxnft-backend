@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const models = require('../../models');
+const { putNotification } = require('./notification')
 
 const Favorite = models.favorite;
 const NFT = models.NFT;
@@ -62,6 +63,8 @@ router.put('/', async (req, res) => {
                 await Subscriber.findByIdAndUpdate(user._id, user);
             }
 
+            await putNotification(address, nftItems[0].creator, ` put his/her favorite on your NFT`)
+
             res.json({ msg: 'added favorite', result: 1 });
         } else {
             let cnt = await Favorite.find({ collectionAddress: contract, tokenId: tokenId }).countDocuments();
@@ -78,6 +81,8 @@ router.put('/', async (req, res) => {
                 user.favoriteCount--;
                 await Subscriber.findByIdAndUpdate(user._id, user);
             }
+
+            await putNotification(address, nftItems[0].creator, ` removed his/her favorite from your NFT`)
 
             res.json({ msg: 'removed favorite', result: 1 });
         }

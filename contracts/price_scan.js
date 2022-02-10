@@ -16,8 +16,8 @@ const provider = new HDWalletProvider(
     pvkey,
     // chainData.rpcUrls[0]
     // "https://data-seed-prebsc-1-s1.binance.org:8545" // testnet RPC
-    'https://speedy-nodes-nyc.moralis.io/2e9dcc31990acc9b69974c3b/bsc/mainnet' // moralis mainnet RPC
-    // 'https://bsc-dataseed.binance.org/' // mainnet RPC
+    // 'https://speedy-nodes-nyc.moralis.io/2e9dcc31990acc9b69974c3b/bsc/mainnet' // moralis mainnet RPC
+    'https://bsc-dataseed.binance.org/' // mainnet RPC
 );
 
 const WBNB_CONTRACT_BSCMAINNET = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
