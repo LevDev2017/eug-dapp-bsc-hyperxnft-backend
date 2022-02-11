@@ -12,6 +12,7 @@ const Creator = mongoose.model(
         category: String,
         tags: String,
         status: String,
+        payment: String,
 
         roles: [{
             type: mongoose.Schema.Types.ObjectId,

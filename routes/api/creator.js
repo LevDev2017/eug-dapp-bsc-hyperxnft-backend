@@ -6,6 +6,8 @@ const models = require('../../models');
 
 const Creator = models.creator;
 const Subscriber = models.subscriber;
+const Payment = models.payment;
+const PaymentConversion = models.payment_conversion;
 
 // @route PUT api/creator
 // @description creator information request from users
@@ -44,6 +46,35 @@ router.get('/', async (req, res) => {
             }
 
             res.json({ result: 1, creators: items });
+        } else if(req.query.info === 'payment') {
+            let users = await Creator.find({ address: req.query.address.toLowerCase() });
+            if (users.length > 0) {
+                let paymentIds;
+                if (users[0].payment !== undefined) {
+                    paymentIds = JSON.parse(users[0].payment);
+                } else {
+                    paymentIds = [0, 1, 2];
+                }
+                
+                let payments = await Payment.find();
+                let payment_conversions = await PaymentConversion.find();
+
+                let i;
+                let retPayments = [];
+                for (i = 0; i < paymentIds.length; i ++) {
+                    let py = payments.find(tt => tt.id === paymentIds[i]);
+                    let pyc = payment_conversions.find(tt => tt.id === paymentIds[i]);
+
+                    retPayments.push({
+                        ...pyc._doc,
+                        ...py._doc,
+                    })
+                }
+
+                res.json({result: 1, payments: retPayments});
+            } else {
+                res.json({ result: 0});
+            }
         } else {
             res.json({ result: 0, msg: 'not implemented' });
         }

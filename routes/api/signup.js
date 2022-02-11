@@ -135,6 +135,7 @@ router.post('/creator', async (req, res) => {
             category: signupCreatorData.category,
             tags: signupCreatorData.tags,
             status: 'pending',
+            payment: '[0, 1, 2]',
             roles: [creatorRole[0]._id]
         };
 

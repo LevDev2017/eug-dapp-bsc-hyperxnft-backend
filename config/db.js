@@ -30,7 +30,6 @@ const Subscriber = models.subscriber;
 const Creator = models.creator;
 
 async function initial() {
-    return;
     const count = await Role.estimatedDocumentCount();
 
     if (count == 0) {
@@ -50,6 +49,8 @@ async function initial() {
         await ret.save();
     }
 
+    return;
+    
     const adminRole = await Role.find({ name: models.ROLES[2] }).limit(1);
     const creatorRole = await Role.find({ name: models.ROLES[1] }).limit(1);
 

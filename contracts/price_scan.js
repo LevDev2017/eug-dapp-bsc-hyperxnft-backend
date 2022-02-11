@@ -119,6 +119,49 @@ const price_scan = async () => {
                     await newPc.save();
                 }
             }
+
+            let allPayments = await payment.find();
+
+            for (i = 0; i < allPayments.length; i++) {
+                if (allPayments[i].id <= 2) continue;
+
+                let decimal = 18;
+                try {
+                    let customTokenContract = await new web3PriceScan.eth.Contract(ERC20.abi, allPayments[i].contract);
+                    decimal = parseInt(await customTokenContract.methods.decimals().call());
+                } catch (err) {
+                }
+                allPayments[i].decimal = decimal;
+                await payment.findByIdAndUpdate(allPayments[i]._id, allPayments[i]);
+
+                let token_unit_amount = BigNumber(`1e${allPayments[i].decimal}`);
+                let routerPairForToken = [allPayments[i].contract, BUSD_CONTRACT_BSCMAINNET];
+
+                let busd_to_token_price;
+                try {
+                    let token_price = await router_v2.methods.getAmountsOut(token_unit_amount, routerPairForToken).call();
+                    busd_to_token_price = BigNumber(token_price[1])
+                        .times(BigNumber(`1e${allPayments[i].decimal}`))
+                        .div(BigNumber(token_price[0]))
+                        .div(BigNumber(`1e${allPayments[1].decimal}`));
+                } catch (err) {
+                    busd_to_token_price = new BigNumber(0.01);
+                }
+
+                let pycs = await payment_conversion.find({ id: allPayments[i].id });
+                let newPyc = {
+                    id: allPayments[i].id,
+                    name: `${allPayments[i].name}/BUSD`,
+                    ratio: busd_to_token_price.toString()
+                }
+
+                if (pycs.length === 0) {
+                    var newPc = new payment_conversion(newPyc);
+                    await newPc.save();
+                } else {
+                    await payment_conversion.findByIdAndUpdate(pycs[0]._id, newPyc);
+                }
+            }
         }
 
         const recursive_run = () => {
@@ -130,8 +173,8 @@ const price_scan = async () => {
                 .catch(err => {
                     let errText = err.toString();
                     // if (errString != errText) {
-                        console.log("reload_price: ", errText);
-                        errString = errText;
+                    console.log("reload_price: ", errText);
+                    errString = errText;
                     // }
                     setTimeout(price_scan, 1000);
                 })
@@ -141,8 +184,8 @@ const price_scan = async () => {
     } catch (err) {
         let errText = err.toString();
         // if (errString != errText) {
-            console.log("price_scan: ", err);
-            errString = errText;
+        console.log("price_scan: ", err);
+        errString = errText;
         // }
 
         setTimeout(price_scan, 1000);
