@@ -300,13 +300,7 @@ const updateSubscriberPrice = async (user, price, payment) => {
 }
 
 const removeSale = async (saleId) => {
-    let saleFound = await Sale.find({
-        saleId: saleId
-    });
-
-    if (saleFound.length > 0) {
-        await Sale.findByIdAndRemove(saleFound[0]._id);
-    }
+    await Sale.deleteMany({saleId: saleId});
 }
 
 module.exports = router;

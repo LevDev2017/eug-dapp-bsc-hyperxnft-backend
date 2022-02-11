@@ -150,20 +150,14 @@ router.post('/creator', async (req, res) => {
 
             res.json({ msg: newItem.status, result: 1 });
         } else {
-            // cryptoguy: for test only, just simulating administrator
-            let ret = await permitCreator({ address: newItem.address, name: newItem.name, email: newItem.email });
-            if (0 === ret) {
-                res.json({ msg: 'Permitted as a creator', result: 1 });
-            } else if (1 === ret) {
-                res.json({ msg: 'Already creator', result: 1 });
-            } else if (3 === ret) {
-                res.json({ msg: 'There was an error while permitting on blockchain', result: 0 });
-            } else if (4 === ret) {
-                items[0].status = 'pending';
-                await Creator.findByIdAndUpdate(items[0]._id, items[0]);
-                res.json({ msg: 'Please try again', result: 0 });
+            if ('pending' === items[0].status) {
+                res.json({ msg: 'Pending as a creator', result: 0 });
+            } else if ('approved' === items[0].status) {
+                res.json({ msg: 'Approved by an admin', result: 0 });
+            } else if ('allowed' === items[0].status) {
+                res.json({ msg: 'Already became a creator', result: 0 });
             } else {
-                res.json({ msg: 'This address is already in use', result: 0 });
+                res.json({ msg: 'Failed', result: 0 });
             }
         }
     } catch (err) {
@@ -172,49 +166,75 @@ router.post('/creator', async (req, res) => {
     }
 });
 
-const permitCreator = async (creatorInfo) => {
-    let items = await Creator.find({
-        address: creatorInfo.address.toLowerCase(),
-        name: creatorInfo.name,
-        email: creatorInfo.email
-    });
+const permitCreator = async (creator) => {
+    if (creator.status === 'approved') {
+        creator.status = 'allowed';
 
-    if (items.length > 0) {
-        if (items[0].status === 'pending') {
-            items[0].status = 'allowed';
-
-            let ret = 0;
-            let tx = await endPendingCreator(items[0].address);
-            if (tx === undefined) {
-                items[0].status = 'failed';
-                ret = 3;
-            } else {
-                let signupUsers = await Subscriber.find({
-                    address: items[0].address.toLowerCase(),
-                    name: items[0].name,
-                    email: items[0].email
-                });
-                if (signupUsers.length > 0) {
-                    signupUsers[0].roles = items[0].roles;
-                    let foundRole = await Role.findById(items[0].roles[0]);
-                    if (foundRole.length > 0)
-                        signupUsers[0].role = foundRole[0].name;
-
-                    await Subscriber.findByIdAndUpdate(signupUsers[0]._id, signupUsers[0]);
-                }
-            }
-
-            await Creator.findByIdAndUpdate(items[0]._id, items[0]);
-
-            return ret;
-        } else if (items[0].status === 'failed') {
-            return 4;
+        let ret = 0;
+        let tx = await endPendingCreator(creator.address);
+        if (tx === undefined) {
+            creator.status = 'failed';
+            ret = 3;
         } else {
-            return 1;
+            let signupUsers = await Subscriber.find({
+                address: creator.address.toLowerCase(),
+                name: creator.name,
+                email: creator.email
+            });
+            if (signupUsers.length > 0) {
+                signupUsers[0].roles = creator.roles;
+                let foundRole = await Role.findById(creator.roles[0]);
+                if (foundRole.length > 0)
+                    signupUsers[0].role = foundRole[0].name;
+
+                await Subscriber.findByIdAndUpdate(signupUsers[0]._id, signupUsers[0]);
+            }
         }
+
+        await Creator.findByIdAndUpdate(creator._id, creator);
+
+        return ret;
+    } else if (creator.status === 'failed') {
+        return 4;
     } else {
-        return 2;
+        return 1;
     }
 }
 
+const poll_creator_pending = async () => {
+    let errString = '';
+
+    const poll_creator_pending_inner = async () => {
+        try {
+            let creators = await Creator.find();
+            let i;
+            for (i = 0; i < creators.length; i++) {
+                if (creators[i].status === 'approved') {
+                    let ret = await permitCreator(creators[i]);
+                }
+            }
+            errString = '';
+        } catch (err) {
+            let errText = err.toString();
+            if (errString != errText) {
+                errString = errText;
+                console.log("poll_creator_pending: ", errText);
+            }
+        }
+    }
+
+    const recursive_run = () => {
+        poll_creator_pending_inner()
+            .then(() => {
+                setTimeout(recursive_run, 1000);
+            })
+            .catch(err => {
+                setTimeout(recursive_run, 1000);
+            });
+    }
+
+    recursive_run();
+}
+
 module.exports = router;
+module.exports.poll_creator_pending = poll_creator_pending;

@@ -27,6 +27,8 @@ const NFT = mongoose.model(
         timestamp: Date,
         lastSoldPriceUSD: Number,
         lastSoldTime: Date,
+        tradeCount: Number,
+        tradeVolume: Number,
         visited: Number
     })
 );

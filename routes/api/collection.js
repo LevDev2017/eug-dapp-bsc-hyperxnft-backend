@@ -7,6 +7,7 @@ const models = require('../../models');
 const Subscriber = models.subscriber;
 const Role = models.role;
 const Collection = models.collection;
+const NFT = models.NFT;
 
 // @route POST api/collection/new
 // @description add a new collection request from users
@@ -44,25 +45,99 @@ router.get('/', async (req, res) => {
     try {
         const { owner, extra, address } = req.query;
 
+        let items = [];
+
         if (owner == undefined) {
             res.json({ msg: 'undefined owner for collection query', result: 0 });
             return;
         } else if (extra === 'all') {
-            var items = await Collection.find();
-            res.json({ msg: 'ok', result: 1, collections: items });
+            items = await Collection.find();
         } else if (extra === 'onlyOwner') {
-            var items = await Collection.find({
+            items = await Collection.find({
                 walletAddress: owner.toLowerCase()
             });
-            res.json({ msg: 'ok', result: 1, collections: items });
         } else if (extra === 'one') {
-            var items = await Collection.find({
+            items = await Collection.find({
                 contractAddress: address.toLowerCase(),
             });
-            res.json({ msg: 'ok', result: 1, collections: items });
         } else {
             res.json({ msg: 'unknown request for collections', result: 0 });
+            return;
         }
+
+        let i;
+        for (i = 0; i < items.length; i++) {
+            let maxTokenId = await NFT.find({
+                collectionAddress: items[i].contractAddress.toLowerCase()
+            }).select('tokenId').sort({ tokenId: -1 }).limit(1);
+
+            if (maxTokenId?.length > 0) {
+                maxTokenId = maxTokenId[0].tokenId;
+            }
+
+            let totalSupply = await NFT.aggregate([
+                { $match: { collectionAddress: items[i].contractAddress.toLowerCase() } },
+                { $group: { _id: null, sum: { $sum: "$totalSupply" } } }
+            ]).limit(1);
+
+            if (totalSupply?.length > 0) {
+                totalSupply = totalSupply[0].sum;
+            }
+
+            let favoriteCount = await NFT.aggregate([
+                { $match: { collectionAddress: items[i].contractAddress.toLowerCase() } },
+                { $group: { _id: null, sum: { $sum: "$favoriteCount" } } }
+            ]).limit(1);
+
+            if (favoriteCount?.length > 0) {
+                favoriteCount = favoriteCount[0].sum;
+            }
+
+            let commentCount = await NFT.aggregate([
+                { $match: { collectionAddress: items[i].contractAddress.toLowerCase() } },
+                { $group: { _id: null, sum: { $sum: "$commentCount" } } }
+            ]).limit(1);
+
+            if (commentCount?.length > 0) {
+                commentCount = commentCount[0].sum;
+            }
+
+            let visitedCount = await NFT.aggregate([
+                { $match: { collectionAddress: items[i].contractAddress.toLowerCase() } },
+                { $group: { _id: null, sum: { $sum: "$visited" } } }
+            ]).limit(1);
+
+            if (visitedCount?.length > 0) {
+                visitedCount = visitedCount[0].sum;
+            }
+
+            let tradeCount = await NFT.aggregate([
+                { $match: { collectionAddress: items[i].contractAddress.toLowerCase() } },
+                { $group: { _id: null, sum: { $sum: "$tradeCount" } } }
+            ]).limit(1);
+
+            if (tradeCount?.length > 0) {
+                tradeCount = tradeCount[0].sum;
+            }
+
+            let tradeVolume = await NFT.aggregate([
+                { $match: { collectionAddress: items[i].contractAddress.toLowerCase() } },
+                { $group: { _id: null, sum: { $sum: "$tradeVolume" } } }
+            ]).limit(1);
+
+            if (tradeVolume?.length > 0) {
+                tradeVolume = tradeVolume[0].sum;
+            }
+
+            items[i]._doc.tokenCount = maxTokenId;
+            items[i]._doc.totalSupply = totalSupply;
+            items[i]._doc.favoriteCount = favoriteCount;
+            items[i]._doc.commentCount = commentCount;
+            items[i]._doc.visitedCount = visitedCount;
+            items[i]._doc.tradeCount = tradeCount;
+            items[i]._doc.tradeVolume = tradeVolume;
+        }
+        res.json({ msg: 'ok', result: 1, collections: items });
     } catch (err) {
         console.log(err);
         res.json({ msg: `error ${err}`, result: 0 });

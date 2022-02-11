@@ -10,6 +10,7 @@ const { getNewFactoryContract, getMsgSenderFormat } = require('../../contracts/n
 const { removeBids } = require('./bid');
 const { removeSale } = require('./sale');
 const { putNotification } = require('./notification')
+const { removeOffer } = require('./offer');
 
 const Sale = models.sale;
 const Payment = models.payment;
@@ -101,14 +102,17 @@ router.get('/', async (req, res) => {
                     })
 
                     let tname = 'unknown';
+                    let image = '';
                     if (found.length > 0) {
                         tname = found[0].title;
+                        image = found[0].image;
                     }
 
                     let j;
                     for (j = i; j < tt.length; j++) {
                         if (tt[j].collectionAddress === tt[i].collectionAddress && tt[j].tokenId === tt[i].tokenId) {
                             tt[j].name = tname;
+                            tt[j].image = image;
                         }
                     }
                 }
@@ -244,7 +248,18 @@ const tradeResult = async (tradeReturnValues) => {
     let newTrade = new Trade(newItem);
     await newTrade.save();
 
-    await removeSale(newItem.saleId);
+    switch (parseInt(tradeReturnValues.sale.method)) {
+    case 0: // buy
+        await removeSale(newItem.saleId);
+        break;
+    case 1: // bid
+        await removeSale(newItem.saleId);
+        await removeBids(newItem.saleId);
+        break;
+    case 2: // offer
+        await removeOffer(newItem.saleId);
+        break;
+    }
 
     // console.log('------------------- ', updateOwnerInfo);
     await updateOwnerInfo(newItem.collectionAddress, newItem.tokenId, newItem.winner);
@@ -255,7 +270,7 @@ const tradeResult = async (tradeReturnValues) => {
     await updateHoldersItemsInfo(newItem.collectionAddress, newItem.tokenId, newItem.seller, newItem.winner, newItem.copy);
     await updateVolumeTrade(newItem.seller, newItem.copy, priceUSD);
 
-    await updateNFTTradeInfo(newItem.collectionAddress, newItem.tokenId, priceUSD);
+    await updateNFTTradeInfo(newItem.collectionAddress, newItem.tokenId, priceUSD, newItem.copy);
 
     await putNotification(newItem.winner, newItem.seller, ` has purchased your NFT (${newItem.method})`)
 }
@@ -299,8 +314,6 @@ const poll_bid = async () => {
                         // tx.events.RemoveFromSale?.returnValues && console.log('---------------- Trade', tx.events.RemoveFromSale.returnValues);
 
                         tx.events.Trade?.returnValues && await tradeResult(tx.events.Trade?.returnValues);
-                        tx.events.RemoveFromSale?.returnValues && await removeSale(parseInt(tx.events.RemoveFromSale?.returnValues.saleId));
-                        tx.events.AuctionResult?.returnValues && await removeBids(parseInt(tx.events.AuctionResult?.returnValues.saleId));
                     }
                 }
             }

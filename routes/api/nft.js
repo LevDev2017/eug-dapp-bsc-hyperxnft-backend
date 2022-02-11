@@ -156,6 +156,32 @@ router.get('/owner', async (req, res) => {
     }
 });
 
+router.get('/property', async (req, res) => {
+    try {
+        const { type, name, creator } = req.query;
+
+        let nfts = await NFT.find();
+
+        const filterProp = (tt) => {
+            let props = JSON.parse(tt.attributes);
+            let pp = props.find(p => p.type === type && p.name === name);
+            return pp !== undefined;
+        }
+
+        let nftsWithProps = nfts.filter(filterProp)
+        let nftsByCreator = nfts.filter(tt => tt.creator.toLowerCase() === creator.toLowerCase());
+        let nftsWithPropsByCreator = nftsByCreator.filter(filterProp);
+
+        let p1 = nfts.length > 0? nftsWithProps.length * 100.0 / nfts.length: 100.0;
+        let p2 = nftsByCreator.length > 0? nftsWithPropsByCreator.length * 100.0 / nftsByCreator.length: 100.0;
+
+        res.json({result: 1, percentage: {marketplace: p1, creator: p2} });
+    } catch (err) {
+        console.log(err);
+        res.json({ msg: `error: ${err.message}`, result: 0 });
+    }
+});
+
 router.post('/lump', async (req, res) => {
     try {
         let arr = req.body;
@@ -237,6 +263,8 @@ router.put('/new', async (req, res) => {
             timestamp: new Date(),
             lastSoldPriceUSD: 0.0,
             lastSoldTime: new Date(),
+            tradeCount: 0,
+            tradeVolume: 0.0,
             visited: 0
         };
 
@@ -412,7 +440,7 @@ const updateVolumeTrade = async (seller, copy, priceUSD) => {
     await Subscriber.findByIdAndUpdate(user._id, user);
 }
 
-const updateNFTTradeInfo = async (collectionAddress, tokenId, priceUSD) => {
+const updateNFTTradeInfo = async (collectionAddress, tokenId, priceUSD, copy) => {
     let nfts = await NFT.find({
         collectionAddress: collectionAddress.toLowerCase(),
         tokenId: tokenId
@@ -423,6 +451,12 @@ const updateNFTTradeInfo = async (collectionAddress, tokenId, priceUSD) => {
     let nft = nfts[0];
     nft.lastSoldPriceUSD = priceUSD;
     nft.lastSoldTime = new Date();
+
+    if (nft.tradeCount === undefined) nft.tradeCount = 1;
+    else nft.tradeCount ++;
+
+    if (nft.tradeVolume === undefined) nft.tradeVolume = copy * priceUSD;
+    else nft.tradeCount += copy * priceUSD;
 
     await NFT.findByIdAndUpdate(nft._id, nft);
 }

@@ -25,6 +25,8 @@ const contract_router = require('./routes/api/contract');
 const nft_category_router = require('./routes/api/nft_category');
 const {addDefaultNFTCategories} = require('./routes/api/nft_category');
 const notification_router = require('./routes/api/notification');
+const { poll_creator_pending } = require('./routes/api/signup')
+const { poll_offer } = require('./routes/api/offer')
 
 const app = express();
 
@@ -65,10 +67,10 @@ price_scan();
 poll_bid();
 syncPaymentToken();
 addDefaultNFTCategories();
+poll_creator_pending();
+poll_offer();
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
-
-
 
 /**
  * mongoose search pattern

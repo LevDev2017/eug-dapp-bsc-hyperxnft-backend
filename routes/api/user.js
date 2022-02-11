@@ -28,6 +28,9 @@ router.get('/', async (req, res) => {
             } else if (query.category !== undefined) {
                 let items = await Category.find();
                 res.json({ result: 1, categories: items });
+            } else if (query.all !== undefined) {
+                let items = await Subscriber.find();
+                res.json({ result: 1, users: items });
             }
         } catch (err) {
             console.log(`${err.message}`);
