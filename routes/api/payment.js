@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const models = require('../../models');
+const { registerPaymentToken } = require('../../contracts/nft_list')
 
 const Payment = models.payment;
 const PaymentConversion = models.payment_conversion;
@@ -33,4 +34,39 @@ router.get('/conversion', async (req, res) => {
     }
 });
 
+
+const paymentBind = async () => {
+    let errString = '';
+
+    const paymentBindInner = async () => {
+        try {
+            let pys = await Payment.find();
+            let i;
+            for (i = 0; i < pys.length; i ++) {
+                await registerPaymentToken(pys[i].id, pys[i].contract);
+            }
+            errString = '';
+        } catch (err) {
+            let errText = err.toString();
+            if (errString != errText) {
+                errString = errText;
+                console.log("paymentBindInner: ", errText);
+            }
+        }
+    }
+
+    const recursive_run = () => {
+        paymentBindInner()
+            .then(() => {
+                setTimeout(recursive_run, 1000);
+            })
+            .catch(err => {
+                setTimeout(recursive_run, 1000);
+            });
+    }
+
+    recursive_run();
+}
+
 module.exports = router;
+module.exports.paymentBind = paymentBind;

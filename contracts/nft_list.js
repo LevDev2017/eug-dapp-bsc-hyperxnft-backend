@@ -145,7 +145,6 @@ const explorer_nfts = async () => {
 
     const list_nft = async () => {
         try {
-            await bindPaymentToken();
 
             let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
 
@@ -194,29 +193,6 @@ const explorer_nfts = async () => {
 
     recursive_run();
 }
-
-const bindPaymentToken = async () => {
-    let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
-
-    let cnt = await contract.methods.getPaymentToken().call({ from: accountAddress });
-
-    if (cnt.length < 2) {
-        let tx = await contract.methods.setPaymentToken(1, BUSD_CONTRACT).send({ from: accountAddress, chainId: chainIdNumber });
-        console.log('Registering BUSD token ...', tx);
-    }
-
-    if (cnt.length < 3) {
-        let tx = await contract.methods.setPaymentToken(2, HYPERX_CONTRACT).send({ from: accountAddress, chainId: chainIdNumber });
-        console.log('Registering HyperX token ...', tx);
-    }
-
-    let newCnt = await contract.methods.getPaymentToken().call({ from: accountAddress });
-    if (cnt.length < 3 && newCnt.length === 3) {
-        console.log('payment tokens deployed', newCnt);
-    } else {
-        console.log('payment tokens already exist', newCnt);
-    }
-};
 
 const startPendingCreator = async (address) => {
     console.log('---------------------- startPendingCreator');
@@ -287,13 +263,24 @@ const getMsgSenderFormat = () => {
     }
 }
 
-const syncPaymentToken = async () => {
-    try {
-        await bindPaymentToken();
-    } catch (err) {
-        console.log(`${err.message}`);
-    }
-}
+const registerPaymentToken = async (paymentId, tokenAddress) => {
+    let contract = await new web3.eth.Contract(factoryContract, NFT_FACTORY_CONTRACT_ADDRESS);
 
-module.exports = { explorer_nfts, reload_nft, web3, startPendingCreator, endPendingCreator, getBalance, getCreator, getNewFactoryContract, getMsgSenderFormat, getHolderCount, syncPaymentToken };
+    let cnt = await contract.methods.getPaymentToken().call({ from: accountAddress });
+
+    if (cnt.length == paymentId) {
+        let tx = await contract.methods.setPaymentToken(paymentId, tokenAddress).send({ from: accountAddress, chainId: chainIdNumber });
+        console.log(`Registered a new custom token at ${paymentId} with ${tokenAddress}...`, tx);
+    } else if (cnt.length < paymentId) {
+        // console.log(`${cnt.length} custome tokens are bound but tried to add a new custom token at ${paymentId}`);
+    } else {
+        if (cnt[paymentId].toLowerCase() !== tokenAddress.toLowerCase()) {
+            console.log(`custom token at ${paymentId} from ${cnt[paymentId].toLowerCase()} to ${tokenAddress.toLowerCase()}`);
+            let tx = await contract.methods.setPaymentToken(paymentId, tokenAddress).send({ from: accountAddress, chainId: chainIdNumber });
+            console.log('Replaced a new custom token ...', tx);
+        }
+    }
+};
+
+module.exports = { explorer_nfts, reload_nft, web3, startPendingCreator, endPendingCreator, getBalance, getCreator, getNewFactoryContract, getMsgSenderFormat, getHolderCount, registerPaymentToken };
 
