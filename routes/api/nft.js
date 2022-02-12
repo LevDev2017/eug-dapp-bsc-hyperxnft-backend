@@ -456,7 +456,7 @@ const updateNFTTradeInfo = async (collectionAddress, tokenId, priceUSD, copy) =>
     else nft.tradeCount ++;
 
     if (nft.tradeVolume === undefined) nft.tradeVolume = copy * priceUSD;
-    else nft.tradeCount += copy * priceUSD;
+    else nft.tradeVolume += copy * priceUSD;
 
     await NFT.findByIdAndUpdate(nft._id, nft);
 }
