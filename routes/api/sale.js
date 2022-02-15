@@ -209,7 +209,14 @@ router.get('/', async (req, res) => {
 
             res.json({ msg: 'ok', result: 1, sales: all, fixed: fixed_items, auction: auction_items });
         } else {
-            let allSales = await Sale.find();
+            let allSalesFound = await Sale.find();
+            let nowTime = (new Date()).getTime();
+
+            let allSales = allSalesFound.filter(t => {
+                let endTime = t.start.getTime() + t.duration * 1000;
+                return t.duration === 0 || nowTime <= endTime;
+            })
+
             var tnow = new Date;
             allSales.forEach((part, index, arr) => {
                 arr[index]._doc = { ...part._doc, timespan: getTimeGap(tnow, part.when), timesec: getTimeGapSeconds(tnow, part.when) };
