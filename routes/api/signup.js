@@ -5,7 +5,8 @@ const router = express.Router();
 const models = require('../../models');
 
 const { startPendingCreator, endPendingCreator } = require('../../contracts/nft_list')
-const { delay } = require('../../platform/wait');
+const { delay } = require('../../platform/wait')
+const { putNotification } = require('./notification')
 
 const Role = models.role;
 const Subscriber = models.subscriber;
@@ -60,6 +61,7 @@ router.post('/', (req, res) => {
                     address_found[0].roles = [role._id];
 
                     await Subscriber.findByIdAndUpdate(address_found[0]._id, address_found[0]);
+                    await putNotification(signupData.address.toLowerCase(), signupData.address.toLowerCase(), `signed up as a ${role.name} by replacing`);
                     res.json({ msg: `signed up, replaced ${address_found[0].name}`, result: 1, role: role.name, info: address_found[0] });
                 } else {
                     let newItem = {
@@ -72,6 +74,7 @@ router.post('/', (req, res) => {
                     }
                     var ret = new Subscriber(newItem);
                     await ret.save();
+                    await putNotification(signupData.address.toLowerCase(), signupData.address.toLowerCase(), `signed up as a new ${role.name}`);
                     res.json({ msg: `signed up, added new`, result: 1, role: role.name, info: newItem });
                 }
 
@@ -104,6 +107,7 @@ router.post('/', (req, res) => {
                         item[0].role = foundRole[0].name;
 
                     await Subscriber.findByIdAndUpdate(item[0]._id, item[0]);
+                    await putNotification(signupData.address.toLowerCase(), signupData.address.toLowerCase(), `signed up as a ${foundRole[0].name}`);
                 }
                 var role = await Role.findById(item[0].roles[0]);
                 res.json({ msg: 'already signed up', result: 1, role: role.name, info: item[0] });
