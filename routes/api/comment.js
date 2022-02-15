@@ -37,6 +37,7 @@ router.post('/', async (req, res) => {
     });
 
     var found = items.find(t => t.address.toLowerCase() === commentData.address.toLowerCase());
+    let users = await Subscriber.find({ address: commentData.address });
 
     var newHistory = new Comment({
         collectionAddress: commentData.collectionAddress,
@@ -45,6 +46,7 @@ router.post('/', async (req, res) => {
         favorite: favCount,
         set: found !== undefined,
         user: commentData.user,
+        avatar: users.length > 0? users[0].avatarURI: '',
         address: commentData.address,
         role: commentData.role,
         time: strNow
@@ -59,7 +61,6 @@ router.post('/', async (req, res) => {
         await NFT.findByIdAndUpdate(nftItems[0]._id, nftItems[0]);
     }
 
-    let users = await Subscriber.find({ address: commentData.address });
     if (users.length > 0) {
         let user = users[0];
         if (user.commentCount === undefined) user.commentCount = 0;

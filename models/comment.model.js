@@ -9,6 +9,7 @@ const Comment = mongoose.model(
         favorite: Number,
         set: Boolean,
         user: String,
+        avatar: String,
         role: String,
         address: String,
         time: Date
