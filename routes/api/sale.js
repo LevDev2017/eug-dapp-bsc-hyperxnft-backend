@@ -175,6 +175,7 @@ router.get('/', async (req, res) => {
                         tokenId: allNFTs[i].tokenId,
                         copy: allNFTs[i].totalSupply - sum,
                         method: 2,
+                        creator: allNFTs[i].creator,
                         owners: ownerInfo || []
                     });
                 }
